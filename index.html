@@ -735,7 +735,7 @@ function getPhoto(cid,no){const k=phKey(cid,no);if(k in photoCache)return photoC
 function setPhoto(cid,no,data){const k=phKey(cid,no);photoCache[k]=data;if(!store)return true;try{if(data)store.setItem(k,data);else store.removeItem(k);return true;}catch(e){toast('照片儲存失敗：瀏覽器空間不足');return false;}}
 
 const DEF_SET={limit:3,recoverMin:10,interval:5,perInterval:2,goal:30,photoOnLimit:true,
-  limitMsg:'請下課來找老師聊聊 🙂',reward:'全班獎勵時間！',star:true,dropFruit:true,lessonApples:10};
+  limitMsg:'請下課來找老師聊聊 🙂',reward:'全班獎勵時間！',star:true,dropFruit:true,lessonApples:10,graceMin:15};
 const DEF_SHOP=[
   {icon:'🎵',name:'下課前聽一首全班選的歌',cost:1},
   {icon:'🎮',name:'音樂遊戲時間 10 分鐘',cost:2},
@@ -901,7 +901,7 @@ function legendHTML(c,left,top,mode){
     ROLES.slice(2).map(x=>'<div>'+x.icon+' '+x.name+'<span>'+nm(r[x.k])+'</span></div>').join('')+'</div>';
 }
 function seatHTML(c,st,s){
-  const ses=c.session,n=s&&ses?(ses.counts[s.no]||0):0,lv=levelOf(n),L=S.settings.limit,v=st.h>st.w;
+  const ses=c.session,GL=!ses&&s?graceLesson(c):null,n=s&&ses?(ses.counts[s.no]||0):GL?(GL.totals[s.no]||0):0,lv=levelOf(n),L=S.settings.limit,v=st.h>st.w;
   const cls='seat '+(v?'v':'h')+(s?'':' empty')+(lv?' l'+lv:'')+(selSeat===st.id?' sel':'')+(s&&picked.nos.includes(s.no)?' picked':'')+(s&&ATT[attOf(c,s.no)]&&ATT[attOf(c,s.no)].away?' away':'');
   let inner='';
   if(s){let dots='';for(let i=0;i<L;i++)dots+='<span class="dot'+(i<n?' f':'')+'"></span>';
@@ -936,6 +936,7 @@ function renderClass(){
   if(!c){m.innerHTML='<div class="empty">還沒有班級，請到「班級與照片」新增。</div>';return;}
   let h='';
   if(editMode)h+='<div class="notice">✏️ <b>調整座位中</b>：先點一個座位（或下方「未入座」的同學），再點另一個座位，兩個人就會交換。小組的裝飾也可以直接拖曳換位置。完成後按「✔ 完成調整」。</div>';
+  else if(!c.session&&graceLesson(c)){const L=graceLesson(c),left=Math.ceil((graceMin()*60000-(Date.now()-L.end))/60000);h+='<div class="notice" style="background:#ede9fe;border-color:#a78bfa">🕒 <b>下課後補記中</b>（還有約 '+left+' 分鐘）：現在點座位，次數會記到剛結束的這節課。</div>';}
   else if(!c.session)h+='<div class="notice">按上方「▶ 開始上課」後，才能開始記錄並累積小組星星和班級果樹的果子。</div>';
   h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
   LAYOUT.forEach(G=>{
@@ -972,7 +973,7 @@ window.addEventListener('resize',fitMap);
 /* ---------- core actions ---------- */
 function startLesson(){
   const c=cur();if(!c)return;
-  c.session={start:Date.now(),counts:{},last:{},totals:{},ivG:{},ivAll:0,iv:0,undo:[],gScore:{},apples:lessonApples(),applesStart:lessonApples()};
+  c.graceUndo=[];c.session={start:Date.now(),counts:{},last:{},totals:{},ivG:{},ivAll:0,iv:0,undo:[],gScore:{},apples:lessonApples(),applesStart:lessonApples()};
   save();renderAll();toast(c.name+' 開始上課！');
   c.session.quotes=pickQuotes(c);save();showQuotes(c,S.settings.quoteSec||20);
   const np=c.nextPlan;
@@ -1009,7 +1010,7 @@ function endLesson(){
     const LREC={start:ses.start,end:now,totals:ses.totals,gScore:gs,top:top,award:award,gLog:ses.gLog||[]};c.lessons.push(LREC);
     if(c.lessons.length>80)c.lessons=c.lessons.slice(-80);
     const stars=c.students.filter(s=>!ses.totals[s.no]).sort((a,b)=>a.no-b.no);
-    c.session=null;save();renderAll();
+    c.graceUndo=[];c.session=null;save();renderAll();
     const kept=ses.apples!=null?ses.apples:0,kStart=ses.applesStart||lessonApples();LREC.kept=kept;LREC.kStart=kStart;c.energy+=kept;if(c.energy<goalOf(c))c.goalShown=false;
     const sick=[],warn=[];
     {const act=[1,2,3,4,5].filter(g=>c.students.some(s=>s.group===g));const vals=act.map(g=>gs[g]||0),mn=Math.min(...vals),mx=Math.max(...vals);
@@ -1023,7 +1024,11 @@ function mark(no){
   const c=cur();if(!c)return;
   const s=c.students.find(x=>x.no===no);
   if(!s){toast('這個班沒有 '+no+' 號');return;}
-  if(!c.session){toast('請先按「▶ 開始上課」');return;}
+  if(!c.session){const L=graceLesson(c);if(!L){toast('請先按「▶ 開始上課」');return;}
+    L.totals[no]=(L.totals[no]||0)+1;L.after=L.after||{};L.after[no]=(L.after[no]||0)+1;c.graceUndo=(c.graceUndo||[]).concat(no);save();renderClass();
+    const t=document.getElementById('t'+no);if(t)t.classList.add('bump');
+    toast('🕒 下課後補記：'+no+' 號 '+s.name+'（記到剛結束的這節課，共 '+L.totals[no]+' 次）');
+    if(L.totals[no]>S.settings.limit)showLimit(c,s,false);return;}
   const ses=c.session,now=Date.now();
   ses.undo.push({no:no,prev:ses.counts[no]||0,prevLast:ses.last[no]||null,iv:ses.iv,g:s.group});
   if(ses.undo.length>60)ses.undo.shift();
@@ -1038,7 +1043,10 @@ function mark(no){
     showLimit(c,s,dropped);
   }
 }
+function graceMin(){return S.settings.graceMin==null?15:S.settings.graceMin;}
+function graceLesson(c){const L=c&&!c.session&&c.lessons&&c.lessons[c.lessons.length-1];return L&&L.end&&Date.now()-L.end<graceMin()*60000?L:null;}
 function undo(){
+  {const c=cur();if(c&&!c.session&&graceLesson(c)&&(c.graceUndo||[]).length){const L=graceLesson(c),no=c.graceUndo.pop();L.totals[no]=Math.max(0,(L.totals[no]||0)-1);if(!L.totals[no])delete L.totals[no];if(L.after&&L.after[no]){L.after[no]--;if(!L.after[no])delete L.after[no];}save();renderClass();toast('已復原 '+no+' 號的補記');return;}}
   const c=cur();if(!c||!c.session||!c.session.undo.length){toast('沒有可以復原的紀錄');return;}
   const ses=c.session,ev=ses.undo.pop();
   if(ev.type==='gs'){if(ses.gLog)ses.gLog.pop();ses.gScore[ev.g]=Math.max(0,(ses.gScore[ev.g]||0)-ev.d);save();renderClass();toast('已復原第 '+ev.g+' 組的'+(ev.d>0?'加分':'扣分'));return;}
@@ -2209,7 +2217,7 @@ function renderSettings(){
     num('limit','一堂課最多提醒次數（超過就顯示照片）',1,10,'次')+
     num('recoverMin','連續沒被記多久回復一格（0＝不回復）',0,40,'分鐘')+
     num('interval','多久結算一次小組星星與全班能量',1,20,'分鐘')+
-    num('lessonApples','每節課一開始，樹上有幾顆蘋果',1,20,'顆')+chk('dropFruit','有人超過提醒次數時，也自動掉一顆蘋果')+
+    num('graceMin','按下課後，還可以補記秩序幾分鐘（0＝不能補記）',0,60,'分鐘')+num('lessonApples','每節課一開始，樹上有幾顆蘋果',1,20,'顆')+chk('dropFruit','有人超過提醒次數時，也自動掉一顆蘋果')+
     chk('photoOnLimit','超過次數時在大螢幕顯示照片')+
     chk('star','下課時顯示「今日安靜之星」')+chk('drawPhoto','抽籤結果顯示學生照片')+
     txt('limitMsg','照片下方的文字')+
