@@ -658,6 +658,12 @@ body.present .cv{display:block}
 .dexfull i{font-style:normal;font-size:28px;color:#cbd5e1;align-self:center}
 .bimg{width:1em;height:1em;object-fit:contain;vertical-align:bottom;display:inline-block}
 .beast .bimg{filter:drop-shadow(0 4px 3px rgba(0,0,0,.18))}
+td.scbest{background:#fef3c7;font-weight:800}
+tr.scrow{cursor:pointer}
+tr.scrow:hover td{background:#f8fafc}
+.scdet{background:#f8fafc}
+.scev{display:inline-block;border:2px solid;border-radius:10px;padding:1px 8px;margin:2px;font-size:13px;font-weight:700;background:#fff}
+.scev.neg{background:#fee2e2}
 </style>
 </head>
 <body>
@@ -1000,11 +1006,11 @@ function endLesson(){
     const top=[],award={};
     if(best>0){const act=[1,2,3,4,5].filter(g=>c.students.some(s=>s.group===g)),vals=act.map(g=>gs[g]||0),mn=Math.min(...vals),ra=rankAward();
       act.forEach(g=>{const v=gs[g]||0,rank=act.filter(h=>(gs[h]||0)>v).length;let n=(mn<best&&v===mn)?ra[4]:ra[Math.min(rank,3)];if(v===best)top.push(g);award[g]=n;c.groupPts[g]=(c.groupPts[g]||0)+n;});}
-    c.lessons.push({start:ses.start,end:now,totals:ses.totals,gScore:gs,top:top});
+    const LREC={start:ses.start,end:now,totals:ses.totals,gScore:gs,top:top,award:award,gLog:ses.gLog||[]};c.lessons.push(LREC);
     if(c.lessons.length>80)c.lessons=c.lessons.slice(-80);
     const stars=c.students.filter(s=>!ses.totals[s.no]).sort((a,b)=>a.no-b.no);
     c.session=null;save();renderAll();
-    const kept=ses.apples!=null?ses.apples:0,kStart=ses.applesStart||lessonApples();c.energy+=kept;if(c.energy<goalOf(c))c.goalShown=false;
+    const kept=ses.apples!=null?ses.apples:0,kStart=ses.applesStart||lessonApples();LREC.kept=kept;LREC.kStart=kStart;c.energy+=kept;if(c.energy<goalOf(c))c.goalShown=false;
     const sick=[],warn=[];
     {const act=[1,2,3,4,5].filter(g=>c.students.some(s=>s.group===g));const vals=act.map(g=>gs[g]||0),mn=Math.min(...vals),mx=Math.max(...vals);
      act.forEach(g=>{const b=guard(c,g);if(mx>mn&&(gs[g]||0)===mn){b.lastStreak=(b.lastStreak||0)+1;if(b.lastStreak>=sickN()&&!b.sick){b.sick=true;b.sickWhy='連續 '+sickN()+' 次最後一名';b.lastStreak=0;sick.push(g);}else if(!b.sick&&b.lastStreak===sickN()-1)warn.push(g);}else b.lastStreak=0;});
@@ -1035,7 +1041,7 @@ function mark(no){
 function undo(){
   const c=cur();if(!c||!c.session||!c.session.undo.length){toast('沒有可以復原的紀錄');return;}
   const ses=c.session,ev=ses.undo.pop();
-  if(ev.type==='gs'){ses.gScore[ev.g]=Math.max(0,(ses.gScore[ev.g]||0)-ev.d);save();renderClass();toast('已復原第 '+ev.g+' 組的'+(ev.d>0?'加分':'扣分'));return;}
+  if(ev.type==='gs'){if(ses.gLog)ses.gLog.pop();ses.gScore[ev.g]=Math.max(0,(ses.gScore[ev.g]||0)-ev.d);save();renderClass();toast('已復原第 '+ev.g+' 組的'+(ev.d>0?'加分':'扣分'));return;}
   if(ev.dropped){ses.apples=(ses.apples||0)+1;}
   if(ev.type==='apple'){ses.apples=(ses.apples||0)+1;save();renderClass();toast('🍎 蘋果回到樹上了');return;}
   ses.counts[ev.no]=ev.prev;if(ev.prevLast)ses.last[ev.no]=ev.prevLast;else delete ses.last[ev.no];
@@ -1050,7 +1056,7 @@ function processIntervals(c,now,quiet){
   const winners=new Set();let up=0,ran=false;
   while(ses.iv<idx){
     for(let g=1;g<=c.groups;g++){
-      if(c.students.some(s=>s.group===g)&&!(ses.ivG[g]>0)){ses.gScore=ses.gScore||{};ses.gScore[g]=(ses.gScore[g]||0)+1;winners.add(g);}
+      if(c.students.some(s=>s.group===g)&&!(ses.ivG[g]>0)){ses.gScore=ses.gScore||{};ses.gScore[g]=(ses.gScore[g]||0)+1;ses.gLog=ses.gLog||[];ses.gLog.push({t:Date.now(),g:g,d:1,auto:1});winners.add(g);}
     }
     ses.ivG={};ses.ivAll=0;ses.iv++;ran=true;
   }
@@ -1982,6 +1988,36 @@ function renderFarm(){
 $('#view-farm').addEventListener('click',e=>{const b=e.target.closest('[data-farm]');if(!b)return;S.cur=b.dataset.farm;save();view='class';renderAll();});
 
 /* ---------- records ---------- */
+const SCOPEN={};
+function scoreLessons(){
+  const rng=S.settings.attRange||'30',since=rng==='all'?0:Date.now()-(+rng)*864e5,list=[];
+  (S.settings.scoreAll?S.classes:[cur()]).forEach(k=>{if(!k)return;(k.lessons||[]).forEach((l,i)=>{if(l.start>=since&&l.gScore)list.push({c:k,l:l,k:k.id+'_'+i});});});
+  return list.sort((a,b)=>b.l.start-a.l.start);
+}
+function scoreRecordsHTML(c){
+  const all=!!S.settings.scoreAll,list=scoreLessons();
+  let h='<div class="panel"><div class="row" style="justify-content:space-between;margin:0 0 10px"><h2 style="margin:0">🏅 小組加分紀錄</h2><div class="row" style="margin:0"><div class="seg"><button class="'+(all?'':'on')+'" data-r="scall">'+esc(c.name)+'</button><button class="'+(all?'on':'')+'" data-r="scall">📚 全部班級</button></div><button class="btn" data-r="sccsv">⬇️ 匯出 CSV</button></div></div>'+
+    '<div class="small" style="margin-bottom:8px">範圍和下方「出缺席統計」一樣。每一行是一節課：各組的本節分數，括號內是下課拿到的 ⭐。點一行可以看那節課每一次加分的時間。</div>';
+  // summary per class
+  const sum={};list.forEach(({c:k,l})=>{const sm=sum[k.id]=sum[k.id]||{name:k.name,n:0,g:{},s:{},top:{},apples:0,aN:0};sm.n++;for(let g=1;g<=5;g++){sm.g[g]=(sm.g[g]||0)+((l.gScore||{})[g]||0);sm.s[g]=(sm.s[g]||0)+((l.award||{})[g]||0);}(l.top||[]).forEach(g=>sm.top[g]=(sm.top[g]||0)+1);if(l.kept!=null){sm.apples+=l.kept;sm.aN++;}});
+  const ks=Object.keys(sum);
+  if(!ks.length)return h+'<div class="small">這段期間還沒有下課結算的紀錄。</div></div>';
+  h+='<h3>總覽</h3><div class="tblwrap" style="max-height:none"><table><thead><tr><th class="l">班級</th><th>節數</th>'+[1,2,3,4,5].map(g=>'<th style="background:'+LAYOUT[g-1].color+'">第'+g+'組<br><span class="small">分數（⭐）</span></th>').join('')+'<th>平均留下蘋果</th></tr></thead><tbody>'+
+    ks.map(id=>{const sm=sum[id],mx=Math.max(...[1,2,3,4,5].map(g=>sm.g[g]||0));return '<tr><td class="l"><b>'+esc(sm.name)+'</b></td><td>'+sm.n+'</td>'+[1,2,3,4,5].map(g=>'<td class="'+((sm.g[g]||0)===mx&&mx>0?'scbest':'')+'"><b>'+(sm.g[g]||0)+'</b>（'+(sm.s[g]||0)+'）'+(sm.top[g]?'<div class="small">🏆×'+sm.top[g]+'</div>':'')+'</td>').join('')+'<td>'+(sm.aN?(sm.apples/sm.aN).toFixed(1)+' / 10':'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
+  h+='<h3>每節課明細</h3><div class="tblwrap" style="max-height:50vh"><table><thead><tr><th>日期</th>'+(all?'<th class="l">班級</th>':'')+[1,2,3,4,5].map(g=>'<th>第'+g+'組</th>').join('')+'<th>最佳小組</th><th>🍎留下</th></tr></thead><tbody>';
+  list.slice(0,200).forEach(({c:k,l,k:key})=>{const d=new Date(l.start),gs=l.gScore||{},aw=l.award||{},mx=Math.max(0,...Object.values(gs));
+    h+='<tr class="scrow" data-r="scrow" data-k="'+key+'"><td>'+(d.getMonth()+1)+'/'+d.getDate()+' <span class="small">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</span></td>'+(all?'<td class="l">'+esc(k.name)+'</td>':'')+
+      [1,2,3,4,5].map(g=>'<td class="'+((gs[g]||0)===mx&&mx>0?'scbest':'')+'">'+(gs[g]||0)+(aw[g]!=null?' <span class="small">(+'+aw[g]+'⭐)</span>':'')+'</td>').join('')+'<td>'+((l.top||[]).length?'第'+l.top.join('、')+'組':'—')+'</td><td>'+(l.kept!=null?l.kept+'/'+(l.kStart||10):'—')+'</td></tr>';
+    if(SCOPEN[key]){const lg=l.gLog||[];h+='<tr><td colspan="'+(all?9:8)+'" class="l scdet">'+(lg.length?lg.map(e=>{const t=new Date(e.t);return '<span class="scev'+(e.d<0?' neg':'')+'" style="border-color:'+LAYOUT[e.g-1].fl+'">'+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+' 第'+e.g+'組 '+(e.d>0?'+':'')+e.d+(e.auto?'（安靜自動）':'')+'</span>';}).join(''):'<span class="small">這節課沒有詳細的加分時間（舊紀錄或沒有加分）</span>')+'</td></tr>';}
+  });
+  return h+'</tbody></table></div></div>';
+}
+function exportScoreCSV(){
+  const list=scoreLessons().slice().reverse(),rows=[['日期','時間','班級','第1組分數','第2組分數','第3組分數','第4組分數','第5組分數','第1組⭐','第2組⭐','第3組⭐','第4組⭐','第5組⭐','最佳小組','留下蘋果']];
+  list.forEach(({c:k,l})=>{const d=new Date(l.start),gs=l.gScore||{},aw=l.award||{};rows.push([isoDay(d),String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),k.name,...[1,2,3,4,5].map(g=>gs[g]||0),...[1,2,3,4,5].map(g=>aw[g]!=null?aw[g]:''),(l.top||[]).join('、'),l.kept!=null?l.kept:'']);});
+  const csv='﻿'+rows.map(r=>r.map(v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\r\n');
+  try{const blob=new Blob([csv],{type:'text/csv'});const el=document.createElement('a');el.href=URL.createObjectURL(blob);el.download='小組加分紀錄_'+isoDay()+'.csv';document.body.appendChild(el);el.click();setTimeout(()=>{URL.revokeObjectURL(el.href);el.remove();},1500);toast('已下載 CSV');}catch(err){toast('下載失敗');}
+}
 function renderRecords(){
   const c=cur(),m=$('#view-records');
   if(!c){m.innerHTML='<div class="empty">還沒有班級。</div>';return;}
@@ -2003,6 +2039,7 @@ function renderRecords(){
   }
   h+='<div class="row" style="margin-top:12px"><button class="btn danger" data-r="clearhist">清除這個班的課堂紀錄</button></div></div>';
   h+='<div class="panel"><div class="row" style="justify-content:space-between;margin:0"><h2 style="margin:0">📨 給導師的通知單</h2><button class="btn pri" data-r="notice">📨 製作通知單</button></div><div class="small">缺帶用品、缺考名單、考試通知、秩序欠佳，排成小單張列印，裁開後交給導師。</div></div>';
+  h+=scoreRecordsHTML(c);
   h+=attRecordsHTML(c);
   h+='<div class="panel"><h2>⭐ 小組星星（累計）</h2><div class="row">';
   for(let g=1;g<=c.groups;g++)h+='<span class="chip">第 '+g+' 組　⭐ '+(c.groupPts[g]||0)+' <button class="btn sm" data-r="gp" data-g="'+g+'" data-d="-1">−</button> <button class="btn sm" data-r="gp" data-g="'+g+'" data-d="1">＋</button></span>';
@@ -2015,6 +2052,9 @@ $('#view-records').addEventListener('change',e=>{if(e.target.id==='attRange'){S.
 $('#view-records').addEventListener('click',e=>{
   const b=e.target.closest('[data-r]');if(!b)return;const c=cur();if(!c)return;const r=b.dataset.r;
   if(r==='attcsv'){exportAttCSV(c);return;}
+  if(r==='scall'){S.settings.scoreAll=!S.settings.scoreAll;save();renderRecords();return;}
+  if(r==='scrow'){const k=b.dataset.k;SCOPEN[k]=!SCOPEN[k];renderRecords();return;}
+  if(r==='sccsv'){exportScoreCSV();return;}
   if(r==='notice'){openNotice();return;}
   if(r==='attopen'){openAtt();return;}
   if(r==='gp'){const g=+b.dataset.g;c.groupPts[g]=Math.max(0,(c.groupPts[g]||0)+(+b.dataset.d));save();renderRecords();}
@@ -2277,7 +2317,7 @@ $('#view-class').addEventListener('click',e=>{
   {const gx=e.target.closest('[data-gsx]');if(gx&&!e.target.closest('[data-gs]')){const g=gx.dataset.gsx;S.settings.gsOpen=S.settings.gsOpen||{};S.settings.gsOpen[g]=!S.settings.gsOpen[g];save();renderClass();return;}}
   {const gb=e.target.closest('[data-gs]');if(gb){const c=cur();if(!c)return;if(!c.session){toast('請先按「▶ 開始上課」');return;}
     const g=+gb.dataset.gs,d=+gb.dataset.d,ses=c.session;ses.gScore=ses.gScore||{};const prev=ses.gScore[g]||0;if(d<0&&prev<=0)return;
-    ses.gScore[g]=prev+d;if(d>0)toast('第 '+g+' 組 +'+d+' 分');ses.undo.push({type:'gs',g:g,d:d});if(ses.undo.length>60)ses.undo.shift();save();renderClass();
+    ses.gScore[g]=prev+d;ses.gLog=ses.gLog||[];ses.gLog.push({t:Date.now(),g:g,d:d});if(d>0)toast('第 '+g+' 組 +'+d+' 分');ses.undo.push({type:'gs',g:g,d:d});if(ses.undo.length>60)ses.undo.shift();save();renderClass();
     const el=document.getElementById('g'+g);if(el&&d>0)el.classList.add('win');return;}}
   if(e.target.closest('[data-lg]')){S.settings.legendOpen=!S.settings.legendOpen;save();renderClass();return;}
   if(e.target.closest('#btnEdit')){editMode=!editMode;selSeat=null;renderClass();return;}
