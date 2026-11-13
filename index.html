@@ -183,12 +183,12 @@ label.file input{display:none}
 .plot.cur .info{outline:3px solid #1f2a44}
 .plot.ripe svg{filter:drop-shadow(0 0 12px #fde047)}
 #printArea{display:none}
-.pp{break-after:page;page-break-after:always}
-.pp:last-child{break-after:auto;page-break-after:auto}
+.pp+.pp{break-before:page;page-break-before:always}
 .ptitle{font-size:22px;font-weight:900;margin:0 0 2mm;height:7mm;display:flex;justify-content:space-between;align-items:baseline;color:#111}
 .ptitle span{font-size:15px;font-weight:600;color:#555}
-.pwrap{width:285mm;height:186mm;position:relative;overflow:hidden;border:2px solid #bbb;border-radius:4mm;background:#fff}
-.pmap{position:absolute;left:0;top:0;width:1920px;height:1080px;transform:scale(.6533) translate(-145px,-6px);transform-origin:0 0;background:#fff}
+.pwrap{width:285mm;height:182mm;contain:paint;position:relative;overflow:hidden;border:2px solid #bbb;border-radius:4mm;background:#fff}
+.pmap{position:absolute;left:0;top:0;width:1630px;height:1060px;overflow:hidden;zoom:.6533;background:#fff}
+.pin{position:absolute;left:-145px;top:-6px;width:1920px;height:1080px}
 .pseat{position:absolute;border:7px solid #111;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#111}
 .pseat.h{flex-direction:row;gap:12px}
 .pseat .sn{font-size:38px;font-weight:900;line-height:1}
@@ -197,12 +197,14 @@ label.file input{display:none}
 @page slip{size:A4 portrait;margin:8mm}
 @media print{
   @page{size:A4 landscape;margin:6mm}
-  .pp{height:198mm;overflow:hidden}
+
   .slpage{page:slip}
   .ntprev .slip{transform:none}
   html,body{background:#fff!important;height:auto}
   body>*:not(#printArea){display:none!important}
-  #printArea{display:block}
+  #printArea{display:block;width:285mm;overflow:hidden}
+  .pp{width:285mm;height:196mm;overflow:hidden;position:relative}
+  html,body{overflow:visible!important;min-width:0!important;width:auto!important}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 .shopwrap{max-width:1100px;margin:0 auto}
@@ -688,6 +690,14 @@ tr.scrow:hover td{background:#f8fafc}
 .logbtn b{font-size:15px}
 .logbtn span{font-size:13px;color:#64748b}
 .logbtn.now{border-color:#ef4444;background:#fef2f2;font-weight:800;justify-content:center}
+.gcirc{cursor:pointer}
+.gcirc.showsc{box-shadow:0 0 0 8px #fde047;animation:pop .35s}
+.gsc2{display:flex;flex-direction:column;align-items:center;line-height:1;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.15)}
+.gsc2 b{font-size:96px;font-weight:900}
+.gsc2 small{font-size:26px;font-weight:900}
+.beast.cheer span{animation:cheer .6s ease-out}
+@keyframes cheer{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.15)}60%{transform:translateY(0) scale(.95)}100%{transform:none}}
+.bq.talk .bqh{display:block;font-size:14px;color:#94a3b8;font-weight:700;margin-top:4px}
 </style>
 </head>
 <body>
@@ -955,6 +965,7 @@ function notesHTML(c){
     '<div class="tools"><button class="toolbtn" data-tool="clean">🧹 下課整理</button><button class="toolbtn" data-tool="draw">🎲 抽籤</button><button class="toolbtn" data-tool="timer" id="sTimer">⏱️ 計時器</button></div></aside>';
 }
 function addNote(){const c=cur(),i=$('#ntIn');if(!c||!i)return;const t=i.value.trim();if(!t)return;c.notes=c.notes||[];c.notes.push({id:uid(),text:t,done:false});save();renderClass();const n=$('#ntIn');if(n)n.focus();}
+const gcShow={};
 function renderClass(){
   const c=cur(),m=$('#view-class');
   if(!c){m.innerHTML='<div class="empty">還沒有班級，請到「班級與照片」新增。</div>';return;}
@@ -964,7 +975,8 @@ function renderClass(){
   else if(!c.session)h+='<div class="notice">按上方「▶ 開始上課」後，才能開始記錄並累積小組星星和班級果樹的果子。</div>';
   h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
   LAYOUT.forEach(G=>{
-    h+='<div class="gcirc" id="g'+G.g+'" style="left:'+(G.cx-95)+'px;top:'+(G.cy-95)+'px;background:'+G.circ+'"><span class="gnum">'+G.g+'</span><span class="gstar">⭐ '+(c.groupPts[G.g]||0)+'</span>'+
+    const shw=gcShow[G.g]&&Date.now()<gcShow[G.g],sc=c.session?((c.session.gScore||{})[G.g]||0):(graceLesson(c)?((graceLesson(c).gScore||{})[G.g]||0):0);
+    h+='<div class="gcirc'+(shw?' showsc':'')+'" id="g'+G.g+'" data-gc="'+G.g+'" style="left:'+(G.cx-95)+'px;top:'+(G.cy-95)+'px;background:'+G.circ+'">'+(shw?'<span class="gsc2"><small>本節</small><b>'+sc+'</b><small>分</small></span>':'<span class="gnum">'+G.g+'</span>')+'<span class="gstar">⭐ '+(c.groupPts[G.g]||0)+'</span>'+
        '<span style="position:absolute;right:-20px;top:-12px">'+flower(G.fl,68)+'</span><span style="position:absolute;right:-30px;bottom:44px">'+flower(G.fl,40)+'</span></div>';
   });
   SEATS.forEach(st=>{const no=c.seats[st.id];const s=no!=null?c.students.find(x=>x.no===no):null;h+=seatHTML(c,st,s);});
@@ -1159,7 +1171,7 @@ function showStars(c,stars,res){
 function printPage(c,tv){
   const X=(x,w)=>tv?1920-x-w:x,Y=(y,h)=>tv?1080-y-h:y;
   const d=new Date(),ds=d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();
-  let h='<div class="pp"><div class="ptitle">'+esc(c.name)+'　座位表'+(tv?'（老師視角）':'')+'<span>列印日期 '+ds+'</span></div><div class="pwrap"><div class="pmap">'+
+  let h='<div class="pp"><div class="ptitle">'+esc(c.name)+'　座位表'+(tv?'（老師視角）':'')+'<span>列印日期 '+ds+'</span></div><div class="pwrap"><div class="pmap"><div class="pin">'+
     '<div class="board" style="left:'+X(273,1408)+'px;top:'+Y(22,40)+'px">黑板</div><div class="piano" style="left:'+X(676,154)+'px;top:'+Y(80,60)+'px">鋼琴</div>';
   LAYOUT.forEach(G=>{h+='<div class="gcirc" style="left:'+X(G.cx-95,190)+'px;top:'+Y(G.cy-95,190)+'px;background:'+G.circ+'"><span class="gnum">'+G.g+'</span><span style="position:absolute;right:-20px;top:-12px">'+flower(G.fl,68)+'</span><span style="position:absolute;right:-30px;bottom:44px">'+flower(G.fl,40)+'</span></div>';});
   SEATS.forEach(st=>{
@@ -1169,7 +1181,7 @@ function printPage(c,tv){
     h+='<div class="pseat '+(v?'v':'h')+'" style="left:'+X(st.x,st.w)+'px;top:'+Y(st.y,st.h)+'px;width:'+st.w+'px;height:'+st.h+'px;background:'+st.G.color+'">'+inner+'</div>';
   });
   h+=stickers(c,st=>({x:X(st.x,st.w),y:Y(st.y,st.h)}))+legendHTML(c,X(548,180),Y(690,280),'print');
-  return h+'</div></div></div>';
+  return h+'</div></div></div></div>';
 }
 function doPrint(list){
   const tv=S.settings.printView==='teacher';
@@ -1336,7 +1348,9 @@ function pickQuotes(c){
 }
 function showQuotes(c,sec){const ses=c.session;if(!ses)return;if(!ses.quotes)ses.quotes=pickQuotes(c);ses.quoteUntil=Date.now()+sec*1000;save();renderClass();
   clearTimeout(window._qT);window._qT=setTimeout(()=>{if(view==='class')renderClass();},sec*1000+100);}
-function quoteBubble(c,g,b){const ses=c.session;if(!ses||!ses.quotes||!ses.quoteUntil||Date.now()>ses.quoteUntil)return '';
+const talk={};
+function quoteBubble(c,g,b){const tk=talk[c.id+'_'+g];if(tk&&Date.now()<tk.until)return '<div class="bq'+(g===2||g===1?' bqr':'')+' talk"><span class="bqi">'+(b.stage===0?'🥚 蛋裡傳來小小的聲音：':'💬 ')+'</span>'+esc(tk.q)+'<span class="bqh">（再點一下守護獸，可以看牠的卡片）</span></div>';
+  const ses=c.session;if(!ses||!ses.quotes||!ses.quoteUntil||Date.now()>ses.quoteUntil)return '';
   return '<div class="bq'+(g===2||g===1?' bqr':'')+'"><span class="bqi">'+(b.stage===0?'🥚 蛋裡傳來小小的聲音：':'💬 ')+'</span>'+esc(ses.quotes[g]||'')+'</div>';}
 function beastBounds(g,sz){const b=PBOX[g];const m=Math.min(60,sz*.35);return [b[0]+m,b[1]+sz*.55,b[2]-m,b[3]+10];}
 function wanderBeasts(){
@@ -2372,7 +2386,12 @@ $('#view-class').addEventListener('click',e=>{
     else if(a==='clr'){c.notes=c.notes.filter(x=>!x.done);save();renderClass();}
     return;}}
   {const tb=e.target.closest('[data-tool]');if(tb){if(tb.dataset.tool==='clean')openClean();else if(tb.dataset.tool==='draw')openDraw();else{const w=$('#tw');if(w.classList.contains('hidden'))twToggleOpen();else w.classList.remove('min');}return;}}
-  {const bz=e.target.closest('[data-beast]');if(bz&&!editMode){beastModal(+bz.dataset.beast);return;}}
+  {const bz=e.target.closest('[data-beast]');if(bz&&!editMode){const c=cur(),g=+bz.dataset.beast,key=c.id+'_'+g,tk=talk[key];
+    if(!c.session&&!(tk&&Date.now()<tk.until)){const pool=quotePool();let q;do{q=pool[Math.floor(Math.random()*pool.length)];}while(pool.length>1&&tk&&q===tk.q);
+      talk[key]={q:q,until:Date.now()+8000};ensureAudio();[660,880,990].forEach((f,i)=>setTimeout(()=>tone(f,0.09,'sine',0.12),i*90));renderClass();
+      const el=document.querySelector('[data-beast="'+g+'"]');if(el)el.classList.add('cheer');
+      clearTimeout(talk['t'+key]);talk['t'+key]=setTimeout(()=>{if(view==='class')renderClass();},8100);return;}
+    delete talk[key];beastModal(g);return;}}
   if(e.target.closest('[data-tree]')){const c=cur(),ses=c&&c.session;if(!ses)return;if(ses.apples<=0){toast('樹上已經沒有蘋果了 😢');return;}
     const st0=treeState(ses.apples);pendingDrop={idx:fruitsShown(c)-1};ses.apples--;ses.undo.push({type:'apple'});(ses.aLog=ses.aLog||[]).push({t:Date.now()});save();const st1=treeState(ses.apples);
     const lab=document.querySelector('.treelabel');if(lab)lab.textContent='🍎 '+ses.apples+' / '+ses.applesStart;
@@ -2380,6 +2399,7 @@ $('#view-class').addEventListener('click',e=>{
     if(st1!==st0){setTimeout(()=>{if(view==='class')renderClass();},700);toast({yellow:'🍂 蘋果樹的葉子開始變黃了…',sparse:'🍂 蘋果樹的葉子越來越少，快安靜下來救救它！',dead:'😢 蘋果樹枯萎了…'}[st1]);}
     else if(ses.apples===3)toast('⚠️ 只剩 3 顆蘋果了，大家要安靜囉！');return;}
   if(e.target.closest('[data-notice]')){openNotice();return;}
+  {const gc=e.target.closest('[data-gc]');if(gc&&!editMode){const g=+gc.dataset.gc;gcShow[g]=Date.now()+10000;renderClass();clearTimeout(gcShow['t'+g]);gcShow['t'+g]=setTimeout(()=>{delete gcShow[g];if(view==='class')renderClass();},10050);return;}}
   if(e.target.closest('[data-attopen]')){openAtt();return;}
   if(e.target.closest('#btnLog')){const c=cur();if(c&&c.session)showLessonLog(c,null);else if(c&&c.lessons.length)showLessonLog(c,c.lessons.length-1);else toast('還沒有課堂紀錄');return;}
   if(e.target.closest('#btnPrint')){askPrint();return;}
