@@ -2031,7 +2031,8 @@ $('#overlay').addEventListener('change',e=>{const k=e.target.dataset.lf;if(!k)re
 
 /* ---------- ☁️ 雲端連動 (Firebase Realtime Database) ---------- */
 const CKEY='cog_cloud';
-let CC=(()=>{try{return Object.assign({cfg:'',pass:'tmes0443',on:false},JSON.parse(store&&store.getItem(CKEY)||'{}'));}catch(e){return {cfg:'',pass:'tmes0443',on:false};}})();
+const DEF_CFG='const firebaseConfig = {\n  apiKey: "AIzaSyAx7fpR0OvfBkHDd9ugOPy5AsqnT_MKN9U",\n  authDomain: "classroom-ad44d.firebaseapp.com",\n  databaseURL: "https://classroom-ad44d-default-rtdb.asia-southeast1.firebasedatabase.app",\n  projectId: "classroom-ad44d",\n  storageBucket: "classroom-ad44d.firebasestorage.app",\n  messagingSenderId: "1012000014562",\n  appId: "1:1012000014562:web:e1f2669bcab686dd851ebb"\n};';
+let CC=(()=>{let o;try{o=Object.assign({cfg:'',pass:'tmes0443',on:false},JSON.parse(store&&store.getItem(CKEY)||'{}'));}catch(e){o={cfg:'',pass:'tmes0443',on:false};}if(!parseCfg(o.cfg))o.cfg=DEF_CFG;return o;})();
 const CLOUD={ref:null,cid:Math.random().toString(36).slice(2,10),status:'off',applying:false,timer:null,lastT:0,detach:null};
 function saveCC(){try{store&&store.setItem(CKEY,JSON.stringify(CC));}catch(e){}}
 function parseCfg(t){const o={};String(t).replace(/(\w+)\s*:\s*["']([^"']+)["']/g,(m,k,v)=>{o[k]=v;});return o.apiKey&&o.databaseURL?o:null;}
