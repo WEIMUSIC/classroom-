@@ -2468,7 +2468,7 @@ $('#view-class').addEventListener('click',e=>{
   {const gx=e.target.closest('[data-gsx]');if(gx&&!e.target.closest('[data-gs]')){const g=gx.dataset.gsx;S.settings.gsOpen=S.settings.gsOpen||{};S.settings.gsOpen[g]=!S.settings.gsOpen[g];save();renderClass();return;}}
   {const gb=e.target.closest('[data-gs]');if(gb){const c=cur();if(!c)return;if(!c.session){toast('請先按「▶ 開始上課」');return;}
     const g=+gb.dataset.gs,d=+gb.dataset.d,ses=c.session;ses.gScore=ses.gScore||{};const prev=ses.gScore[g]||0;if(d<0&&prev<=0)return;
-    ses.gScore[g]=prev+d;ses.gLog=ses.gLog||[];ses.gLog.push({t:Date.now(),g:g,d:d});if(d>0)toast('第 '+g+' 組 +'+d+' 分');ses.undo.push({type:'gs',g:g,d:d});if(ses.undo.length>60)ses.undo.shift();save();renderClass();
+    ses.gScore[g]=prev+d;ses.gLog=ses.gLog||[];ses.gLog.push({t:Date.now(),g:g,d:d});ensureAudio();if(d>0){for(let i=0;i<Math.min(d,5);i++)setTimeout(()=>tone(880+i*110,0.12,'triangle',0.22),i*90);setTimeout(()=>tone(1320,0.22,'triangle',0.2),Math.min(d,5)*90);}else tone(330,0.15,'sine',0.15);if(d>0)toast('第 '+g+' 組 +'+d+' 分');ses.undo.push({type:'gs',g:g,d:d});if(ses.undo.length>60)ses.undo.shift();save();renderClass();
     const el=document.getElementById('g'+g);if(el&&d>0)el.classList.add('win');return;}}
   if(e.target.closest('[data-lg]')){S.settings.legendOpen=!S.settings.legendOpen;save();renderClass();return;}
   if(e.target.closest('#btnEdit')){editMode=!editMode;selSeat=null;renderClass();return;}
