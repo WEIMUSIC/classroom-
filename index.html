@@ -706,6 +706,7 @@ tr.scrow:hover td{background:#f8fafc}
   <select id="classSel" aria-label="選擇班級"></select>
   <button class="tbtn go" id="btnLesson">▶ 開始上課</button>
   <div id="timer"></div>
+  <button class="tbtn" id="cloudChip" style="display:none"></button>
   <button class="tbtn" id="btnUndo" title="Ctrl+Z">↶ 復原</button>
   <button class="tbtn" id="btnFull" title="上課投影模式（全螢幕）">⛶ 全螢幕</button>
   <nav>
@@ -762,7 +763,7 @@ const KEY='cog_v1', PH='cog_ph_';
 let store=null;
 try{store=window.localStorage;store.setItem('__t','1');store.removeItem('__t');}catch(e){store=null;}
 function load(){if(!store)return null;try{return JSON.parse(store.getItem(KEY));}catch(e){return null;}}
-function save(){if(!store)return;try{store.setItem(KEY,JSON.stringify(S));}catch(e){toast('儲存失敗：瀏覽器空間不足');}}
+function save(){if(store){try{store.setItem(KEY,JSON.stringify(S));}catch(e){toast('儲存失敗：瀏覽器空間不足');}}if(window.__cloudPush)window.__cloudPush();}
 const photoCache={};
 const phKey=(cid,no)=>PH+cid+'_'+no;
 function getPhoto(cid,no){const k=phKey(cid,no);if(k in photoCache)return photoCache[k];let v=null;if(store){try{v=store.getItem(k);}catch(e){}}photoCache[k]=v;return v;}
@@ -2028,6 +2029,68 @@ function showLessonLog(c,idx){
 }
 $('#overlay').addEventListener('change',e=>{const k=e.target.dataset.lf;if(!k)return;document.querySelectorAll('.lgrow[data-k="'+k+'"]').forEach(r=>r.style.display=e.target.checked?'':'none');});
 
+/* ---------- ☁️ 雲端連動 (Firebase Realtime Database) ---------- */
+const CKEY='cog_cloud';
+let CC=(()=>{try{return Object.assign({cfg:'',pass:'tmes0443',on:false},JSON.parse(store&&store.getItem(CKEY)||'{}'));}catch(e){return {cfg:'',pass:'tmes0443',on:false};}})();
+const CLOUD={ref:null,cid:Math.random().toString(36).slice(2,10),status:'off',applying:false,timer:null,lastT:0,detach:null};
+function saveCC(){try{store&&store.setItem(CKEY,JSON.stringify(CC));}catch(e){}}
+function parseCfg(t){const o={};String(t).replace(/(\w+)\s*:\s*["']([^"']+)["']/g,(m,k,v)=>{o[k]=v;});return o.apiKey&&o.databaseURL?o:null;}
+async function roomKey(p){const txt='cog|'+p;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,40);}
+  catch(e){let h1=0x811c9dc5,h2=0x1234567;for(const ch of txt){h1=Math.imul(h1^ch.charCodeAt(0),16777619)>>>0;h2=Math.imul(h2+ch.charCodeAt(0),2654435761)>>>0;}return 'f'+h1.toString(16)+h2.toString(16);}}
+function loadScript(src){return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.onload=res;sc.onerror=()=>rej(new Error('load'));document.head.appendChild(sc);});}
+async function loadSDK(){if(window.firebase&&window.firebase.database)return;const v='10.12.2';
+  await loadScript('https://www.gstatic.com/firebasejs/'+v+'/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/'+v+'/firebase-database-compat.js');}
+function setCloud(st){CLOUD.status=st;const b=$('#cloudChip');if(!b)return;
+  if(st==='off'){b.style.display='none';return;}b.style.display='';
+  b.textContent={connecting:'☁️ 連線中…',ok:'☁️ 已同步',sync:'☁️ 同步中…',offline:'⚠️ 雲端離線',err:'⚠️ 雲端錯誤'}[st]||st;
+  b.style.background=st==='ok'?'#059669':st==='offline'||st==='err'?'#b45309':'#33415f';
+  if(view==='settings')renderSettings();}
+function cloudPanelHTML(){
+  const st={off:'未連線',connecting:'連線中…',ok:'✅ 已連線，資料會自動同步',sync:'同步中…',offline:'⚠️ 網路中斷，恢復後會自動同步',err:'⚠️ 連線失敗，請檢查設定碼'}[CLOUD.status];
+  return '<div class="panel"><h2>☁️ 雲端連動（電腦・平板）</h2><div class="small" style="font-size:14px;line-height:1.7">連線後，用同一組「Firebase 設定碼」和「班級密碼」的電腦、平板會共用同一份資料：在平板上記秩序、加分，投影的電腦會馬上跟著變。<br><b>學生照片不會上傳</b>，只留在各自的裝置上。</div>'+
+    '<div class="row"><b style="width:120px">狀態</b><span>'+st+'</span></div>'+
+    '<div class="row" style="align-items:flex-start"><b style="width:120px">Firebase 設定碼</b><textarea id="ccCfg" placeholder="把 Firebase 給的 const firebaseConfig = { ... } 整段貼在這裡" style="flex:1;min-height:110px;font-family:monospace;font-size:13px">'+esc(CC.cfg)+'</textarea></div>'+
+    '<div class="row"><b style="width:120px">班級密碼</b><input type="text" id="ccPass" value="'+esc(CC.pass)+'" style="width:140px"><span class="small">所有裝置都要輸入一樣的密碼</span></div>'+
+    '<div class="row">'+(CC.on?'<button class="btn danger" data-cl2="off">中斷連線</button><button class="btn" data-cl2="push">⬆️ 用這台的資料覆蓋雲端</button><button class="btn" data-cl2="pull">⬇️ 用雲端的資料覆蓋這台</button>':'<button class="btn pri" data-cl2="on">☁️ 連線</button>')+'</div></div>';
+}
+async function cloudConnect(first){
+  const cfg=parseCfg(CC.cfg);if(!cfg){toast('設定碼看不懂，請整段貼上 Firebase 的 firebaseConfig');CC.on=false;saveCC();setCloud('off');return;}
+  setCloud('connecting');
+  try{await loadSDK();}catch(e){setCloud('err');toast('載入雲端元件失敗，請確認網路');return;}
+  try{
+    const app=firebase.apps.length?firebase.app():firebase.initializeApp(cfg);const db=firebase.database(app);
+    const key=await roomKey(CC.pass);if(CLOUD.detach)CLOUD.detach();
+    const ref=db.ref('rooms/'+key+'/state');CLOUD.ref=ref;
+    const snap=await ref.get();const v=snap.val();
+    if(first&&v&&v.data){
+      await new Promise(res=>modal('<div style="font-size:54px">☁️</div><h2>雲端已經有資料了</h2><div>雲端資料最後更新：'+new Date(v.t).toLocaleString('zh-TW')+'<br>要使用哪一份？</div><div class="acts"><button class="btn" data-act="mine">用這台的資料（覆蓋雲端）</button><button class="btn pri" data-act="cloud">用雲端的資料</button></div>','',{mine:()=>{cloudPushNow();res();},cloud:()=>{applyRemote(v,true);res();},x:res}));
+    }else if(!v)cloudPushNow();else applyRemote(v,false);
+    const h=ref.on('value',sn=>{const d=sn.val();if(d&&d.cid!==CLOUD.cid&&d.t>=CLOUD.lastT)applyRemote(d,false);},err=>{setCloud('err');});
+    const ch=db.ref('.info/connected').on('value',sn=>setCloud(sn.val()?'ok':'offline'));
+    CLOUD.detach=()=>{ref.off('value',h);db.ref('.info/connected').off('value',ch);};
+    CC.on=true;saveCC();setCloud('ok');
+  }catch(e){console.log(e);setCloud('err');toast('連線失敗：'+(e&&e.message?e.message.slice(0,60):''));}
+}
+function cloudPushNow(){if(!CLOUD.ref)return;const t=Date.now();CLOUD.lastT=t;setCloud('sync');
+  CLOUD.ref.set({cid:CLOUD.cid,t:t,data:JSON.stringify(S)}).then(()=>setCloud('ok'),()=>setCloud('offline'));}
+window.__cloudPush=function(){if(!CC.on||!CLOUD.ref||CLOUD.applying)return;clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudPushNow,350);};
+function applyRemote(v,announce){
+  try{const ns=JSON.parse(v.data);if(!ns||!Array.isArray(ns.classes))return;
+    CLOUD.applying=true;CLOUD.lastT=v.t;const keepCur=S.cur;S=ns;S.settings=Object.assign({},DEF_SET,S.settings||{});S.classes.forEach(ensureSeats);
+    if(S.classes.find(c=>c.id===keepCur))S.cur=keepCur;else if(!S.classes.find(c=>c.id===S.cur))S.cur=S.classes.length?S.classes[0].id:null;
+    if(store){try{store.setItem(KEY,JSON.stringify(S));}catch(e){}}
+    renderAll();CLOUD.applying=false;if(announce)toast('已載入雲端資料');
+  }catch(e){CLOUD.applying=false;}
+}
+function cloudAction(a){
+  if(a==='on'){CC.cfg=($('#ccCfg')||{}).value||CC.cfg;CC.pass=(($('#ccPass')||{}).value||'').trim()||'tmes0443';saveCC();cloudConnect(true);}
+  else if(a==='off'){if(CLOUD.detach)CLOUD.detach();CLOUD.ref=null;CC.on=false;saveCC();setCloud('off');renderSettings();toast('已中斷雲端連線，資料只存在這台');}
+  else if(a==='push')confirmBox('用這台覆蓋雲端？','其他裝置的資料會被這台的資料取代。','覆蓋',()=>cloudPushNow(),true);
+  else if(a==='pull'){if(!CLOUD.ref)return;CLOUD.ref.get().then(sn=>{const v=sn.val();if(v)applyRemote(v,true);else toast('雲端還沒有資料');});}
+}
+$('#cloudChip').addEventListener('click',()=>{view='settings';renderView();setTimeout(()=>{const t=$('#ccCfg');if(t)t.scrollIntoView({block:'center'});},50);});
+if(CC.on)setTimeout(()=>cloudConnect(false),300);
+
 /* ---------- farm ---------- */
 function miniTree(c){
   const full=c.energy>=goalOf(c),shown=Math.round(Math.min(c.energy,goalOf(c))/goalOf(c)*30),leaf=full?['#84cc16','#a3e635']:['#4caf50','#6cc96b'];
@@ -2297,11 +2360,12 @@ function renderSettings(){
       '<td><input type="number" min="1" max="500" value="'+goalOf(c)+'" data-cls="'+c.id+'" data-f="goal"> 顆</td><td><input type="number" min="0" max="30" value="'+perOf(c)+'" data-cls="'+c.id+'" data-f="per"> 次</td><td>🍎 '+c.energy+'（'+Math.round(Math.min(1,c.energy/goalOf(c))*100)+'%）</td></tr>').join('')+
     '</tbody></table></div></div>'+
     '<div class="panel"><h2>ℹ️ 資料存在哪裡</h2><div class="small" style="font-size:14px;line-height:1.7">名單、照片和紀錄都只存在<b>目前這台電腦的這個瀏覽器</b>。換電腦、換瀏覽器或清除瀏覽資料之後，資料就不見了。建議固定用教室的同一台電腦開這個頁面，並定期下載備份。</div></div>'+
+    cloudPanelHTML()+
     '<div class="panel"><h2>💾 備份與還原</h2><div class="small" style="font-size:14px;line-height:1.7">備份檔包含所有班級的名單、照片、座位、果樹、星星和課堂紀錄。換電腦時，在新電腦打開這個工具，再按「從備份檔還原」就好。<br>備份檔裡有學生照片，請存放在安全的地方，不要上傳到公開的位置。</div>'+
     '<div class="row" style="margin-top:10px"><button class="btn pri" data-b="export">⬇️ 下載備份檔</button><label class="file btn">⬆️ 從備份檔還原<input type="file" accept=".json,application/json" id="importFile"></label>'+
     '<span class="small">上次備份：'+(S.lastBackup?new Date(S.lastBackup).toLocaleString('zh-TW'):'還沒有備份過')+'</span></div></div>';
 }
-$('#view-settings').addEventListener('click',e=>{if(e.target.closest('[data-b=export]'))exportData();});
+$('#view-settings').addEventListener('click',e=>{if(e.target.closest('[data-b=export]'))exportData();const cb=e.target.closest('[data-cl2]');if(cb)cloudAction(cb.dataset.cl2);});
 function exportData(){
   const ph={};
   if(store){for(let i=0;i<store.length;i++){const k=store.key(i);if(k&&k.indexOf(PH)===0)ph[k]=store.getItem(k);}}
