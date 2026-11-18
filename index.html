@@ -698,6 +698,16 @@ tr.scrow:hover td{background:#f8fafc}
 .beast.cheer span{animation:cheer .6s ease-out}
 @keyframes cheer{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.15)}60%{transform:translateY(0) scale(.95)}100%{transform:none}}
 .bq.talk .bqh{display:block;font-size:14px;color:#94a3b8;font-weight:700;margin-top:4px}
+.gcirc .gstar{cursor:pointer}
+.gcirc .gstar:hover{background:#fef08a}
+.bzg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.bzb{border:4px solid var(--gc,#1f2a44);border-radius:16px;padding:8px 14px;font-size:20px;font-weight:900;cursor:pointer;font-family:inherit;min-width:92px}
+.bzb small{font-size:15px;font-weight:700}
+.bzb.on{box-shadow:0 0 0 4px #fde047}
+.bzb.all{background:#f1f5f9;border-color:#1f2a44}
+.bzn{display:flex;gap:8px;justify-content:center;margin:6px 0}
+.bzn button{border:3px solid #f59e0b;background:#fffbeb;border-radius:14px;padding:8px 18px;font-size:22px;font-weight:900;color:#92400e;cursor:pointer;font-family:inherit}
+.bzn button.on{background:#f59e0b;color:#fff}
 </style>
 </head>
 <body>
@@ -963,7 +973,7 @@ function notesHTML(c){
     (ns.length?ns.map(n=>'<li class="'+(n.done?'done':'')+'"><button class="nck" data-nt="tg" data-id="'+n.id+'">'+(n.done?'✔':'')+'</button><span>'+esc(n.text)+'</span><button class="ndel" data-nt="del" data-id="'+n.id+'" title="刪除">×</button></li>').join(''):'<li class="empty">（還沒有事項）</li>')+
     '</ul><div class="nadd"><input type="text" id="ntIn" placeholder="新增事項…" maxlength="40"><button data-nt="add">＋</button></div>'+
     (ns.some(n=>n.done)?'<button class="nclr" data-nt="clr">清除已完成</button>':'')+
-    '<div class="tools"><button class="toolbtn" data-tool="clean">🧹 下課整理</button><button class="toolbtn" data-tool="draw">🎲 抽籤</button><button class="toolbtn" data-tool="timer" id="sTimer">⏱️ 計時器</button></div></aside>';
+    '<div class="tools"><button class="toolbtn" data-tool="bonus">🌟 加碼星星</button><button class="toolbtn" data-tool="clean">🧹 下課整理</button><button class="toolbtn" data-tool="draw">🎲 抽籤</button><button class="toolbtn" data-tool="timer" id="sTimer">⏱️ 計時器</button></div></aside>';
 }
 function addNote(){const c=cur(),i=$('#ntIn');if(!c||!i)return;const t=i.value.trim();if(!t)return;c.notes=c.notes||[];c.notes.push({id:uid(),text:t,done:false});save();renderClass();const n=$('#ntIn');if(n)n.focus();}
 const gcShow={};
@@ -977,7 +987,7 @@ function renderClass(){
   h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
   LAYOUT.forEach(G=>{
     const shw=gcShow[G.g]&&Date.now()<gcShow[G.g],sc=c.session?((c.session.gScore||{})[G.g]||0):(graceLesson(c)?((graceLesson(c).gScore||{})[G.g]||0):0);
-    h+='<div class="gcirc'+(shw?' showsc':'')+'" id="g'+G.g+'" data-gc="'+G.g+'" style="left:'+(G.cx-95)+'px;top:'+(G.cy-95)+'px;background:'+G.circ+'">'+(shw?'<span class="gsc2"><small>本節</small><b>'+sc+'</b><small>分</small></span>':'<span class="gnum">'+G.g+'</span>')+'<span class="gstar">⭐ '+(c.groupPts[G.g]||0)+'</span>'+
+    h+='<div class="gcirc'+(shw?' showsc':'')+'" id="g'+G.g+'" data-gc="'+G.g+'" style="left:'+(G.cx-95)+'px;top:'+(G.cy-95)+'px;background:'+G.circ+'">'+(shw?'<span class="gsc2"><small>本節</small><b>'+sc+'</b><small>分</small></span>':'<span class="gnum">'+G.g+'</span>')+'<span class="gstar" data-bonus="'+G.g+'" title="老師加碼星星">⭐ '+(c.groupPts[G.g]||0)+'</span>'+
        '<span style="position:absolute;right:-20px;top:-12px">'+flower(G.fl,68)+'</span><span style="position:absolute;right:-30px;bottom:44px">'+flower(G.fl,40)+'</span></div>';
   });
   SEATS.forEach(st=>{const no=c.seats[st.id];const s=no!=null?c.students.find(x=>x.no===no):null;h+=seatHTML(c,st,s);});
@@ -1037,14 +1047,15 @@ $('#overlay').addEventListener('change',e=>{if(e.target.id==='npAdd')npTmp.add=e
 $('#overlay').addEventListener('click',e=>{const b=e.target.closest('[data-np]');if(!b)return;const ta=$('#npTxt');if(!ta)return;const t=b.dataset.np;ta.value=(ta.value.trim()?ta.value.trim().replace(/[；;]$/,'')+'；':'')+t;npTmp.text=ta.value;ta.focus();});
 function endLesson(){
   const c=cur();if(!c||!c.session)return;
-  confirmBox('要下課了嗎？','會儲存這堂課的紀錄'+(S.settings.star?'，並顯示「今日安靜之星」':'')+'。','下課',()=>{
+  const mins=Math.floor((Date.now()-c.session.start)/60000);
+  const doEnd=()=>{
     const ses=c.session,now=Date.now();
     processIntervals(c,now,true);
     const gs=ses.gScore||{};let best=0;for(let g=1;g<=5;g++)if(c.students.some(s=>s.group===g))best=Math.max(best,gs[g]||0);
     const top=[],award={};
     if(best>0){const act=[1,2,3,4,5].filter(g=>c.students.some(s=>s.group===g)),vals=act.map(g=>gs[g]||0),mn=Math.min(...vals),ra=rankAward();
       act.forEach(g=>{const v=gs[g]||0,rank=act.filter(h=>(gs[h]||0)>v).length;let n=(mn<best&&v===mn)?ra[4]:ra[Math.min(rank,3)];if(v===best)top.push(g);award[g]=n;c.groupPts[g]=(c.groupPts[g]||0)+n;});}
-    const LREC={start:ses.start,end:now,totals:ses.totals,gScore:gs,top:top,award:award,gLog:ses.gLog||[],mLog:ses.mLog||[],aLog:ses.aLog||[],att:JSON.parse(JSON.stringify((c.att||{})[isoDay(new Date(ses.start))]||null))};c.lessons.push(LREC);
+    const LREC={start:ses.start,end:now,totals:ses.totals,gScore:gs,top:top,award:award,gLog:ses.gLog||[],bLog:ses.bLog||[],mLog:ses.mLog||[],aLog:ses.aLog||[],att:JSON.parse(JSON.stringify((c.att||{})[isoDay(new Date(ses.start))]||null))};c.lessons.push(LREC);
     if(c.lessons.length>80)c.lessons=c.lessons.slice(-80);
     const stars=c.students.filter(s=>!ses.totals[s.no]).sort((a,b)=>a.no-b.no);
     c.graceUndo=[];c.session=null;save();renderAll();
@@ -1055,7 +1066,10 @@ function endLesson(){
      save();renderView();}
     const res={top:top,best:best,gs:gs,sick:sick,warn:warn,award:award,kept:kept,kStart:kStart,acc:c.energy,goal:goalOf(c)};
     askNextPlan(c,()=>{if(S.settings.star)showStars(c,stars,res);else showStars(c,null,res);});
-  });
+  };
+  modal('<h2>要下課了嗎？</h2><div>這節課已經上了 <b>'+mins+'</b> 分鐘。<br>按「下課」會儲存這節課的紀錄'+(S.settings.star?'，並顯示「今日安靜之星」':'')+'。</div>'+
+    '<div class="acts"><button class="btn" data-act="no">繼續上課</button><button class="btn danger" data-act="discard">不小心按到，取消這節（不儲存）</button><button class="btn pri" data-act="ok">下課</button></div>','',{ok:doEnd,
+    discard:()=>confirmBox('確定取消這節課？','這節課的提醒次數、小組加分、蘋果都不會儲存，也不會發星星。','取消這節',()=>{c.session=null;c.graceUndo=[];save();renderAll();toast('已取消，這節課不留紀錄');},true)});
 }
 function mark(no){
   const c=cur();if(!c)return;
@@ -2011,6 +2025,7 @@ function showLessonLog(c,idx){
   ev.push({t:L.start,k:'s',h:'▶ 開始上課'});
   (L.gLog||[]).forEach(e=>ev.push({t:e.t,k:'g',g:e.g,h:'第 '+e.g+' 組 '+(e.d>0?'+':'')+e.d+' 分'+(e.auto?'（安靜自動加分）':'')}));
   (L.mLog||[]).forEach(e=>ev.push({t:e.t,k:e.after?'ma':'m',g:grp(e.no),h:(e.after?'🕒 下課後補記：':'')+e.no+' 號 '+esc(nm(e.no))+' 被提醒（第 '+e.n+' 次）'+(e.n>S.settings.limit?' ⚠️超過':'')}));
+  (L.bLog||[]).forEach(e=>ev.push({t:e.t,k:'g',h:'🌟 老師加碼：第 '+e.gs.join('、')+' 組 各 +'+e.n+' ⭐'+(e.why?'（'+esc(e.why)+'）':'')}));
   (L.aLog||[]).forEach(e=>ev.push({t:e.t,k:'a',h:e.auto?'🍎 蘋果掉 1 顆（'+e.auto+' 號超過提醒次數）':'🍎 蘋果掉 1 顆（秩序提醒）'}));
   if(!live)ev.push({t:L.end,k:'e',h:'■ 下課'});
   ev.sort((a,b)=>a.t-b.t);
@@ -2091,6 +2106,27 @@ function cloudAction(a){
 }
 $('#cloudChip').addEventListener('click',()=>{view='settings';renderView();setTimeout(()=>{const t=$('#ccCfg');if(t)t.scrollIntoView({block:'center'});},50);});
 if(CC.on)setTimeout(()=>cloudConnect(false),300);
+
+/* ---------- 老師加碼星星 ---------- */
+let BZ={n:1,why:''};
+function bonusStar(g0){
+  const c=cur();if(!c)return;const act=[1,2,3,4,5].filter(g=>c.students.some(s=>s.group===g));BZ.sel=new Set(g0?[g0]:[]);BZ.n=1;BZ.why='';
+  const draw=()=>{const h='<div style="font-size:54px">🌟</div><h2>老師加碼星星</h2>'+
+    '<div class="bzg">'+act.map(g=>'<button class="bzb'+(BZ.sel.has(g)?' on':'')+'" data-bzg="'+g+'" style="--gc:'+LAYOUT[g-1].fl+';background:'+(BZ.sel.has(g)?LAYOUT[g-1].circ:'#fff')+'">第 '+g+' 組<br><small>⭐ '+(c.groupPts[g]||0)+'</small></button>').join('')+'<button class="bzb all" data-bzg="all">全部小組</button></div>'+
+    '<div class="bzn">'+[1,2,3,5].map(n=>'<button class="'+(BZ.n===n?'on':'')+'" data-bzn="'+n+'">+'+n+' ⭐</button>').join('')+'</div>'+
+    '<div class="chips" style="justify-content:center;margin:6px 0">'+['合作很棒','表演精彩','進步很多','幫助同學','整理最快'].map(w=>'<button class="chip'+(BZ.why===w?' on':'')+'" data-bzw="'+w+'">'+w+'</button>').join('')+'</div>'+
+    '<div class="acts"><button class="btn" data-act="x">取消</button><button class="btn pri" data-act="give"'+(BZ.sel.size?'':' disabled')+'>發星星</button></div>';
+    modal(h,'bzm',{give:give});};
+  const give=()=>{if(!BZ.sel.size)return;const gs=[...BZ.sel].sort();gs.forEach(g=>{c.groupPts[g]=(c.groupPts[g]||0)+BZ.n;});
+    c.bonusLog=c.bonusLog||[];c.bonusLog.push({t:Date.now(),gs:gs,n:BZ.n,why:BZ.why});if(c.session){(c.session.bLog=c.session.bLog||[]).push({t:Date.now(),gs:gs,n:BZ.n,why:BZ.why});}
+    save();renderView();ensureAudio();fanfare();
+    modal('<div style="font-size:80px;animation:pethop .5s infinite alternate">🌟</div><h2>老師加碼！</h2><div style="font-size:26px;font-weight:900">第 '+gs.join('、')+' 組 各 +'+BZ.n+' ⭐</div>'+(BZ.why?'<div style="font-size:20px;margin-top:6px">'+esc(BZ.why)+'</div>':'')+'<div class="acts"><button class="btn pri" data-act="x">太棒了！</button></div>','party',{},4000);};
+  BZ.redraw=draw;draw();
+}
+$('#overlay').addEventListener('click',e=>{if(!document.querySelector('.modal.bzm'))return;const c=cur();
+  const g=e.target.closest('[data-bzg]'),n=e.target.closest('[data-bzn]'),w=e.target.closest('[data-bzw]');if(!g&&!n&&!w)return;e.stopPropagation();
+  if(g){if(g.dataset.bzg==='all'){const act=[1,2,3,4,5].filter(x=>c.students.some(s=>s.group===x));BZ.sel=BZ.sel.size===act.length?new Set():new Set(act);}else{const x=+g.dataset.bzg;BZ.sel.has(x)?BZ.sel.delete(x):BZ.sel.add(x);}}
+  if(n)BZ.n=+n.dataset.bzn;if(w)BZ.why=BZ.why===w.dataset.bzw?'':w.dataset.bzw;BZ.redraw();},true);
 
 /* ---------- farm ---------- */
 function miniTree(c){
@@ -2447,7 +2483,7 @@ $('#view-class').addEventListener('click',e=>{
     else if(a==='del'){c.notes=c.notes.filter(x=>x.id!==nb.dataset.id);save();renderClass();}
     else if(a==='clr'){c.notes=c.notes.filter(x=>!x.done);save();renderClass();}
     return;}}
-  {const tb=e.target.closest('[data-tool]');if(tb){if(tb.dataset.tool==='clean')openClean();else if(tb.dataset.tool==='draw')openDraw();else{const w=$('#tw');if(w.classList.contains('hidden'))twToggleOpen();else w.classList.remove('min');}return;}}
+  {const tb=e.target.closest('[data-tool]');if(tb){if(tb.dataset.tool==='bonus')bonusStar(0);else if(tb.dataset.tool==='clean')openClean();else if(tb.dataset.tool==='draw')openDraw();else{const w=$('#tw');if(w.classList.contains('hidden'))twToggleOpen();else w.classList.remove('min');}return;}}
   {const bz=e.target.closest('[data-beast]');if(bz&&!editMode){const c=cur(),g=+bz.dataset.beast,key=c.id+'_'+g,tk=talk[key];
     if(!c.session&&!(tk&&Date.now()<tk.until)){const pool=quotePool();let q;do{q=pool[Math.floor(Math.random()*pool.length)];}while(pool.length>1&&tk&&q===tk.q);
       talk[key]={q:q,until:Date.now()+8000};ensureAudio();[660,880,990].forEach((f,i)=>setTimeout(()=>tone(f,0.09,'sine',0.12),i*90));renderClass();
@@ -2461,6 +2497,7 @@ $('#view-class').addEventListener('click',e=>{
     if(st1!==st0){setTimeout(()=>{if(view==='class')renderClass();},700);toast({yellow:'🍂 蘋果樹的葉子開始變黃了…',sparse:'🍂 蘋果樹的葉子越來越少，快安靜下來救救它！',dead:'😢 蘋果樹枯萎了…'}[st1]);}
     else if(ses.apples===3)toast('⚠️ 只剩 3 顆蘋果了，大家要安靜囉！');return;}
   if(e.target.closest('[data-notice]')){openNotice();return;}
+  {const bo=e.target.closest('[data-bonus]');if(bo&&!editMode){bonusStar(+bo.dataset.bonus);return;}}
   {const gc=e.target.closest('[data-gc]');if(gc&&!editMode){const g=+gc.dataset.gc;gcShow[g]=Date.now()+10000;renderClass();clearTimeout(gcShow['t'+g]);gcShow['t'+g]=setTimeout(()=>{delete gcShow[g];if(view==='class')renderClass();},10050);return;}}
   if(e.target.closest('[data-attopen]')){openAtt();return;}
   if(e.target.closest('#btnLog')){const c=cur();if(c&&c.session)showLessonLog(c,null);else if(c&&c.lessons.length)showLessonLog(c,c.lessons.length-1);else toast('還沒有課堂紀錄');return;}
