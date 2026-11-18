@@ -128,6 +128,8 @@ label.file input{display:none}
 #toast.show{opacity:1}
 .mapbox{position:relative;width:100%;overflow:hidden}
 .map{position:absolute;top:0;width:1920px;height:1080px;transform-origin:0 0;background:#fff3e2;border-radius:24px}
+.map.tv>*{rotate:180deg}
+.btn.tvon{background:#0ea5e9;color:#fff;border-color:#0284c7}
 .board{position:absolute;left:273px;top:22px;width:1408px;height:40px;background:#00c060;border-radius:20px;color:#fff;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center;letter-spacing:8px}
 .piano{position:absolute;left:676px;top:80px;width:154px;height:60px;background:#000;color:#fff;border-radius:30px;font-weight:900;font-size:24px;display:flex;align-items:center;justify-content:center;letter-spacing:4px}
 .gcirc{position:absolute;width:190px;height:190px;border-radius:50%;border:8px solid #fff;display:flex;align-items:center;justify-content:center}
@@ -739,7 +741,7 @@ tr.scrow:hover td{background:#f8fafc}
 <main id="view-setup" class="hidden"></main>
 <main id="view-settings" class="hidden"></main>
 
-<div id="pbar"><span id="ptimer"></span><button class="tbtn" id="pLesson"></button><button class="tbtn" id="pDraw">🎲</button><button class="tbtn" id="pTimer">⏱️</button><button class="tbtn" id="pUndo">↶ 復原</button><button class="tbtn" id="pExit">✕ 離開全螢幕</button></div>
+<div id="pbar"><span id="ptimer"></span><button class="tbtn" id="pLesson"></button><button class="tbtn" id="pDraw">🎲</button><button class="tbtn" id="pTimer">⏱️</button><button class="tbtn" id="pUndo">↶ 復原</button><button class="tbtn" id="pTV" title="切換老師／學生視角">🔄 視角</button><button class="tbtn" id="pExit">✕ 離開全螢幕</button></div>
 <div id="tw" class="hidden">
   <div class="twh" id="twh"><span class="twt">⏱️ 倒數計時</span><span class="twmini" id="twmini"></span><button id="twBig" title="超大顯示">⤢</button><button id="twMin" title="縮小成小標籤">—</button><button id="twClose" title="關閉">✕</button></div>
   <div class="twbody">
@@ -984,7 +986,7 @@ function renderClass(){
   if(editMode)h+='<div class="notice">✏️ <b>調整座位中</b>：先點一個座位（或下方「未入座」的同學），再點另一個座位，兩個人就會交換。小組的裝飾也可以直接拖曳換位置。完成後按「✔ 完成調整」。</div>';
   else if(!c.session&&graceLesson(c)){const L=graceLesson(c),left=Math.ceil((graceMin()*60000-(Date.now()-L.end))/60000);h+='<div class="notice" style="background:#ede9fe;border-color:#a78bfa">🕒 <b>下課後補記中</b>（還有約 '+left+' 分鐘）：現在點座位，次數會記到剛結束的這節課。</div>';}
   else if(!c.session)h+='<div class="notice">按上方「▶ 開始上課」後，才能開始記錄並累積小組星星和班級果樹的果子。</div>';
-  h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
+  h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+(S.settings.teacherView?' tv':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
   LAYOUT.forEach(G=>{
     const shw=gcShow[G.g]&&Date.now()<gcShow[G.g],sc=c.session?((c.session.gScore||{})[G.g]||0):(graceLesson(c)?((graceLesson(c).gScore||{})[G.g]||0):0);
     h+='<div class="gcirc'+(shw?' showsc':'')+'" id="g'+G.g+'" data-gc="'+G.g+'" style="left:'+(G.cx-95)+'px;top:'+(G.cy-95)+'px;background:'+G.circ+'">'+(shw?'<span class="gsc2"><small>本節</small><b>'+sc+'</b><small>分</small></span>':'<span class="gnum">'+G.g+'</span>')+'<span class="gstar" data-bonus="'+G.g+'" title="老師加碼星星">⭐ '+(c.groupPts[G.g]||0)+'</span>'+
@@ -1004,7 +1006,7 @@ function renderClass(){
   const un=c.students.filter(s=>!s.group).sort((a,b)=>a.no-b.no);
   if(un.length)h+='<div class="unseated"><b>未入座：</b>'+un.map(s=>'<button class="chip'+(selSeat==='u'+s.no?' on':'')+'" data-u="'+s.no+'">'+s.no+' '+esc(s.name)+'</button>').join('')+'</div>';
   h+='</div><aside class="board-side dateside"><div class="bt">今天</div><div id="dateBoard"></div>'+attMiniHTML(c)+'</aside></div>';
-  h+='<div class="hint"><button class="btn'+(editMode?' pri':'')+'" id="btnEdit">'+(editMode?'✔ 完成調整':'✏️ 調整座位')+'</button><button class="btn" id="btnLog">📜 本節紀錄</button><button class="btn" id="btnPrint">🖨️ 列印座位表</button><span>👆 點座位＝記一次</span><span>⌨️ 輸入座號＋Enter</span><span>↶ Ctrl+Z 復原</span>'+
+  h+='<div class="hint"><button class="btn'+(editMode?' pri':'')+'" id="btnEdit">'+(editMode?'✔ 完成調整':'✏️ 調整座位')+'</button><button class="btn" id="btnLog">📜 本節紀錄</button><button class="btn'+(S.settings.teacherView?' tvon':'')+'" id="btnTV" title="切換畫面方向">'+(S.settings.teacherView?'🧑‍🏫 老師視角（黑板在下）':'👀 學生視角（黑板在上）')+'</button><button class="btn" id="btnPrint">🖨️ 列印座位表</button><span>👆 點座位＝記一次</span><span>⌨️ 輸入座號＋Enter</span><span>↶ Ctrl+Z 復原</span>'+
      '<span class="legend"><span class="lg" style="border:3px solid #f59e0b"></span>提醒<span class="lg" style="border:3px solid #f97316;background:#fdba74"></span>注意<span class="lg" style="border:3px solid #dc2626;background:#fca5a5"></span>最後警告（閃爍）<span class="lg" style="background:#4c1d95"></span>超過</span></div>'+
      '<div class="hint" style="margin-top:6px"><span>每 '+S.settings.recoverMin+' 分鐘沒被記自動回復一格；每 '+S.settings.interval+' 分鐘結算一次：整組沒被記的組本節 +1 分；下課依名次發 ⭐（'+rankAward().join('/')+'）；🍎 每節課樹上有 '+lessonApples()+' 顆蘋果，秩序不好就點樹讓蘋果掉一顆'+(S.settings.dropFruit?'（有人超過 '+S.settings.limit+' 次也會自動掉 1 顆）':'')+'，下課時剩下的蘋果放進果園'+'</span></div>';
   m.innerHTML=h;updateToday();twRender();fitMap();
@@ -1013,7 +1015,7 @@ function fitMap(){
   const box=$('#mapbox'),map=$('#map');if(!box||!map||!box.offsetParent)return;
   const w=box.clientWidth,availH=window.innerHeight-box.getBoundingClientRect().top-(document.body.classList.contains('present')?8:70);
   const k=Math.min(w/1920,Math.max(availH,320)/1080);
-  map.style.transform='scale('+k+')';map.style.left=((w-1920*k)/2)+'px';box.style.height=(1080*k)+'px';
+  map.style.transform=S.settings.teacherView?'scale('+k+') translate(1920px,1080px) rotate(180deg)':'scale('+k+')';map.style.left=((w-1920*k)/2)+'px';box.style.height=(1080*k)+'px';
 }
 window.addEventListener('resize',fitMap);
 
@@ -1296,7 +1298,7 @@ $('#view-shop').addEventListener('change',e=>{if(e.target.dataset.ptc!=null){con
   $('#view-class').addEventListener('pointerdown',e=>{
     if(!editMode)return;const el=e.target.closest('.deco[data-did]');if(!el)return;e.preventDefault();
     const map=$('#map'),k=map.getBoundingClientRect().width/1920;
-    drag={el:el,k:k,sx:e.clientX,sy:e.clientY,l:parseFloat(el.style.left),t:parseFloat(el.style.top)};el.setPointerCapture(e.pointerId);el.classList.add('dragging');});
+    drag={el:el,k:S.settings.teacherView?-k:k,sx:e.clientX,sy:e.clientY,l:parseFloat(el.style.left),t:parseFloat(el.style.top)};el.setPointerCapture(e.pointerId);el.classList.add('dragging');});
   $('#view-class').addEventListener('pointermove',e=>{if(!drag)return;drag.el.style.left=(drag.l+(e.clientX-drag.sx)/drag.k)+'px';drag.el.style.top=(drag.t+(e.clientY-drag.sy)/drag.k)+'px';});
   $('#view-class').addEventListener('pointerup',e=>{if(!drag)return;const el=drag.el,c=cur();el.classList.remove('dragging');
     const g=el.dataset.dg,d=c&&c.decos&&(c.decos[g]||[]).find(x=>x.id===el.dataset.did);
@@ -2472,6 +2474,7 @@ function exitPresent(){
 $('#btnFull').addEventListener('click',enterPresent);
 $('#pExit').addEventListener('click',exitPresent);
 $('#pUndo').addEventListener('click',undo);
+$('#pTV').addEventListener('click',()=>{S.settings.teacherView=!S.settings.teacherView;save();renderAll();toast(S.settings.teacherView?'🧑‍🏫 老師視角：黑板在下方':'👀 學生視角：黑板在上方');});
 $('#pLesson').addEventListener('click',()=>{const c=cur();if(!c)return;c.session?endLesson():startLesson();});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('present')){document.body.classList.remove('present');renderAll();}setTimeout(fitMap,200);});
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;view=b.dataset.view;renderView();});
@@ -2501,6 +2504,7 @@ $('#view-class').addEventListener('click',e=>{
   {const gc=e.target.closest('[data-gc]');if(gc&&!editMode){const g=+gc.dataset.gc;gcShow[g]=Date.now()+10000;renderClass();clearTimeout(gcShow['t'+g]);gcShow['t'+g]=setTimeout(()=>{delete gcShow[g];if(view==='class')renderClass();},10050);return;}}
   if(e.target.closest('[data-attopen]')){openAtt();return;}
   if(e.target.closest('#btnLog')){const c=cur();if(c&&c.session)showLessonLog(c,null);else if(c&&c.lessons.length)showLessonLog(c,c.lessons.length-1);else toast('還沒有課堂紀錄');return;}
+  if(e.target.closest('#btnTV')){S.settings.teacherView=!S.settings.teacherView;save();renderAll();toast(S.settings.teacherView?'🧑‍🏫 老師視角：黑板在下方':'👀 學生視角：黑板在上方');return;}
   if(e.target.closest('#btnPrint')){askPrint();return;}
   {const gx=e.target.closest('[data-gsx]');if(gx&&!e.target.closest('[data-gs]')){const g=gx.dataset.gsx;S.settings.gsOpen=S.settings.gsOpen||{};S.settings.gsOpen[g]=!S.settings.gsOpen[g];save();renderClass();return;}}
   {const gb=e.target.closest('[data-gs]');if(gb){const c=cur();if(!c)return;if(!c.session){toast('請先按「▶ 開始上課」');return;}
