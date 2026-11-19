@@ -577,6 +577,25 @@ body.present .cv{display:block}
 .byehint{margin-top:22px;font-size:24px;font-weight:800;opacity:.75}
 .byefl i{position:absolute;bottom:-80px;font-style:normal;animation:floatup linear infinite;opacity:.7}
 @keyframes floatup{to{transform:translateY(-120vh) rotate(30deg)}}
+#tasks{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:48;display:flex;align-items:center;justify-content:center;padding:16px}
+#tasks.hidden{display:none}
+.attbtn.sm3{font-size:15px;padding:5px 0;background:#fecaca;box-shadow:0 3px 0 #dc2626;margin-top:6px}
+.attbtn .tbdg{background:#dc2626;color:#fff;border-radius:10px;padding:0 6px;margin-left:4px;font-size:13px}
+.tsticker{position:absolute;z-index:4;background:#fff7ed;border:4px solid #ea580c;border-radius:22px;padding:0 8px;font-size:32px;line-height:1.3;font-weight:900;color:#c2410c;pointer-events:none;white-space:nowrap}
+.tkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:14px;padding:10px 12px;margin:0 18px}
+.tkadd input[type=text]{width:240px}
+.tkcard{border:3px solid #e2e8f0;border-radius:16px;margin:10px 18px;padding:10px 12px}
+.tkcard.exam{border-color:#c4b5fd}.tkcard.hw{border-color:#fdba74}
+.tkh{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:20px}
+.tkh .tkt{font-weight:900}.tkh .tkd{color:#64748b;font-weight:700;font-size:16px}
+.tkh .tkn{margin-left:auto;font-weight:800;font-size:15px}
+.tkgrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tkgrid button{border:2px solid #e2e8f0;background:#fff;border-radius:12px;padding:5px 10px;font-weight:800;font-size:16px;cursor:pointer;font-family:inherit;color:#334155}
+.tkgrid button.miss{background:#fee2e2;border-color:#dc2626;color:#b91c1c}
+.tkgrid button.done{background:#dcfce7;border-color:#16a34a;color:#166534}
+.tksum{margin:6px 18px;background:#fff7ed;border:2px solid #fdba74;border-radius:14px;padding:10px 14px;font-size:17px;line-height:1.7}
+.tksum b{color:#c2410c}
+.tkpend{background:#fff7ed;border:4px solid #ea580c;border-radius:14px;padding:12px 16px;font-size:22px;font-weight:800;line-height:1.6;text-align:left;margin-top:8px;max-height:40vh;overflow:auto}
 #notice{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:48;display:flex;align-items:center;justify-content:center;padding:16px}
 #notice.hidden{display:none}
 .ntc{width:min(1250px,100%)}
@@ -758,7 +777,7 @@ tr.scrow:hover td{background:#f8fafc}
   </div>
 </div>
 <div id="draw" class="hidden"></div>
-<div id="att" class="hidden"></div>
+<div id="att" class="hidden"></div><div id="tasks" class="hidden"></div>
 <div id="box" class="hidden"></div>
 <div id="clean" class="hidden"></div>
 <div id="bye" class="hidden"></div>
@@ -785,6 +804,9 @@ const phKey=(cid,no)=>PH+cid+'_'+no;
 function getPhoto(cid,no){const k=phKey(cid,no);if(k in photoCache)return photoCache[k];let v=null;if(store){try{v=store.getItem(k);}catch(e){}}photoCache[k]=v;return v;}
 function setPhoto(cid,no,data){const k=phKey(cid,no);photoCache[k]=data;if(!store)return true;try{if(data)store.setItem(k,data);else store.removeItem(k);return true;}catch(e){toast('照片儲存失敗：瀏覽器空間不足');return false;}}
 
+function isTablet(){try{return matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints>1&&/Macintosh|iPad|Android/.test(navigator.userAgent));}catch(e){return false;}}
+function TV(){let v=null;try{v=localStorage.getItem('cog_tv');}catch(e){}return v==null?isTablet():v==='1';}
+function setTV(on){try{localStorage.setItem('cog_tv',on?'1':'0');}catch(e){}}
 const DEF_SET={limit:3,recoverMin:10,interval:5,perInterval:2,goal:30,photoOnLimit:true,
   limitMsg:'請下課來找老師聊聊 🙂',reward:'全班獎勵時間！',star:true,dropFruit:true,lessonApples:10,graceMin:15};
 const DEF_SHOP=[
@@ -967,7 +989,7 @@ function attMiniHTML(c){
   const a=c.att&&c.att[isoDay()]||{st:{},miss:{}};
   const away=Object.keys(a.st).filter(n=>ATT[a.st[n]]&&ATT[a.st[n]].away),late=Object.keys(a.st).filter(n=>a.st[n]==='late'),miss=Object.keys(a.miss);
   const tot=c.students.length;
-  let h='<div class="attmini"><button class="attbtn" data-attopen="1">📋 點名</button><button class="attbtn sm2" data-notice="1">📨 通知單</button><div class="am1">出席<br><b>'+(tot-away.length)+'</b>/'+tot+'</div>';
+  let h='<div class="attmini"><button class="attbtn" data-attopen="1">📋 點名</button><button class="attbtn sm2" data-notice="1">📨 通知單</button><button class="attbtn sm3" data-tasks="1">📝 缺考缺交'+(tkPendingCount(c)?'<span class="tbdg">'+tkPendingCount(c)+'</span>':'')+'</button><div class="am1">出席<br><b>'+(tot-away.length)+'</b>/'+tot+'</div>';
   if(away.length)h+='<div class="am2">不在教室<br>'+away.map(Number).sort((x,y)=>x-y).map(n=>n+'號').join(' ')+'</div>';
   if(late.length)h+='<div class="am2">⏰ 遲到<br>'+late.map(Number).sort((x,y)=>x-y).map(n=>n+'號').join(' ')+'</div>';
   if(miss.length)h+='<div class="am2">🎒 缺帶 '+miss.length+' 人</div>';
@@ -990,7 +1012,7 @@ function renderClass(){
   if(editMode)h+='<div class="notice">✏️ <b>調整座位中</b>：先點一個座位（或下方「未入座」的同學），再點另一個座位，兩個人就會交換。小組的裝飾也可以直接拖曳換位置。完成後按「✔ 完成調整」。</div>';
   else if(!c.session&&graceLesson(c)){const L=graceLesson(c),left=Math.ceil((graceMin()*60000-(Date.now()-L.end))/60000);h+='<div class="notice" style="background:#ede9fe;border-color:#a78bfa">🕒 <b>下課後補記中</b>（還有約 '+left+' 分鐘）：現在點座位，次數會記到剛結束的這節課。</div>';}
   else if(!c.session)h+='<div class="notice">按上方「▶ 開始上課」後，才能開始記錄並累積小組星星和班級果樹的果子。</div>';
-  h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+(S.settings.teacherView?' tv':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
+  h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+(TV()?' tv':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
   LAYOUT.forEach(G=>{
     const shw=gcShow[G.g]&&Date.now()<gcShow[G.g],sc=c.session?((c.session.gScore||{})[G.g]||0):(graceLesson(c)?((graceLesson(c).gScore||{})[G.g]||0):0);
     h+='<div class="gcirc'+(shw?' showsc':'')+'" id="g'+G.g+'" data-gc="'+G.g+'" style="left:'+(G.cx-95)+'px;top:'+(G.cy-95)+'px;background:'+G.circ+'">'+(shw?'<span class="gsc2"><small>本節</small><b>'+sc+'</b><small>分</small></span>':'<span class="gnum">'+G.g+'</span>')+'<span class="gstar" data-bonus="'+G.g+'" title="老師加碼星星">⭐ '+(c.groupPts[G.g]||0)+'</span>'+
@@ -1006,11 +1028,11 @@ function renderClass(){
      }else{
        h+='<div class="'+cls+' mini" data-gsx="'+G.g+'" style="left:'+G.gx+'px;top:'+(G.cy-78)+'px;border-color:'+G.fl+'" title="打開加分面板"><b class="gse" style="background:'+G.fl+'">＋</b><div class="gsv">'+v+'</div><div class="gsl">本節分數</div></div>';
      }});}
-  h+=beastsHTML(c)+stickers(c,st=>({x:st.x,y:st.y}))+missStickers(c)+(S.settings.legendOpen?legendHTML(c,560,600,'open'):legendHTML(c,560,600,'mini'))+'</div></div>';
+  h+=beastsHTML(c)+stickers(c,st=>({x:st.x,y:st.y}))+missStickers(c)+taskStickers(c)+(S.settings.legendOpen?legendHTML(c,560,600,'open'):legendHTML(c,560,600,'mini'))+'</div></div>';
   const un=c.students.filter(s=>!s.group).sort((a,b)=>a.no-b.no);
   if(un.length)h+='<div class="unseated"><b>未入座：</b>'+un.map(s=>'<button class="chip'+(selSeat==='u'+s.no?' on':'')+'" data-u="'+s.no+'">'+s.no+' '+esc(s.name)+'</button>').join('')+'</div>';
   h+='</div><aside class="board-side dateside"><div class="bt">今天</div><div id="dateBoard"></div>'+attMiniHTML(c)+'</aside></div>';
-  h+='<div class="hint"><button class="btn'+(editMode?' pri':'')+'" id="btnEdit">'+(editMode?'✔ 完成調整':'✏️ 調整座位')+'</button><button class="btn" id="btnLog">📜 本節紀錄</button><button class="btn'+(S.settings.teacherView?' tvon':'')+'" id="btnTV" title="切換畫面方向">'+(S.settings.teacherView?'🧑‍🏫 老師視角（黑板在下）':'👀 學生視角（黑板在上）')+'</button><button class="btn" id="btnPrint">🖨️ 列印座位表</button><span>👆 點座位＝記一次</span><span>⌨️ 輸入座號＋Enter</span><span>↶ Ctrl+Z 復原</span>'+
+  h+='<div class="hint"><button class="btn'+(editMode?' pri':'')+'" id="btnEdit">'+(editMode?'✔ 完成調整':'✏️ 調整座位')+'</button><button class="btn" id="btnLog">📜 本節紀錄</button><button class="btn'+(TV()?' tvon':'')+'" id="btnTV" title="切換畫面方向">'+(TV()?'🧑‍🏫 老師視角（黑板在下）':'👀 學生視角（黑板在上）')+'</button><button class="btn" id="btnPrint">🖨️ 列印座位表</button><span>👆 點座位＝記一次</span><span>⌨️ 輸入座號＋Enter</span><span>↶ Ctrl+Z 復原</span>'+
      '<span class="legend"><span class="lg" style="border:3px solid #f59e0b"></span>提醒<span class="lg" style="border:3px solid #f97316;background:#fdba74"></span>注意<span class="lg" style="border:3px solid #dc2626;background:#fca5a5"></span>最後警告（閃爍）<span class="lg" style="background:#4c1d95"></span>超過</span></div>'+
      '<div class="hint" style="margin-top:6px"><span>每 '+S.settings.recoverMin+' 分鐘沒被記自動回復一格；每 '+S.settings.interval+' 分鐘結算一次：整組沒被記的組本節 +1 分；下課依名次發 ⭐（'+rankAward().join('/')+'）；🍎 每節課樹上有 '+lessonApples()+' 顆蘋果，秩序不好就點樹讓蘋果掉一顆'+(S.settings.dropFruit?'（有人超過 '+S.settings.limit+' 次也會自動掉 1 顆）':'')+'，下課時剩下的蘋果放進果園'+'</span></div>';
   m.innerHTML=h;updateToday();twRender();fitMap();
@@ -1019,7 +1041,7 @@ function fitMap(){
   const box=$('#mapbox'),map=$('#map');if(!box||!map||!box.offsetParent)return;
   const w=box.clientWidth,availH=window.innerHeight-box.getBoundingClientRect().top-(document.body.classList.contains('present')?8:70);
   const k=Math.min(w/1920,Math.max(availH,320)/1080);
-  map.style.transform=S.settings.teacherView?'scale('+k+') translate(1920px,1080px) rotate(180deg)':'scale('+k+')';map.style.left=((w-1920*k)/2)+'px';box.style.height=(1080*k)+'px';
+  map.style.transform=TV()?'scale('+k+') translate(1920px,1080px) rotate(180deg)':'scale('+k+')';map.style.left=((w-1920*k)/2)+'px';box.style.height=(1080*k)+'px';
 }
 window.addEventListener('resize',fitMap);
 
@@ -1029,9 +1051,10 @@ function startLesson(){
   c.graceUndo=[];c.session={start:Date.now(),counts:{},last:{},totals:{},ivG:{},ivAll:0,iv:0,undo:[],gScore:{},apples:lessonApples(),applesStart:lessonApples()};
   save();renderAll();toast(c.name+' 開始上課！');
   c.session.quotes=pickQuotes(c);save();showQuotes(c,S.settings.quoteSec||20);
-  const np=c.nextPlan;
+  const np=c.nextPlan,pend=tkPendingHTML(c);
   if(np&&np.text){const d=new Date(np.t);
-    modal('<div style="font-size:54px">📖</div><h2>上次留下的進度提醒</h2><div class="small" style="margin-bottom:8px">'+(d.getMonth()+1)+'/'+d.getDate()+' 下課時寫的</div><div class="npshow">'+esc(np.text)+'</div><div class="acts"><button class="btn pri" data-act="x">好的，開始上課</button></div>','',{});}
+    modal('<div style="font-size:54px">📖</div><h2>上次留下的進度提醒</h2><div class="small" style="margin-bottom:8px">'+(d.getMonth()+1)+'/'+d.getDate()+' 下課時寫的</div><div class="npshow">'+esc(np.text)+'</div>'+(pend?'<h3 style="margin:14px 0 0">📝 還沒補考／補交</h3>'+pend:'')+'<div class="acts"><button class="btn pri" data-act="x">好的，開始上課</button>'+(pend?'<button class="btn" data-act="tk">打開缺考・缺交</button>':'')+'</div>','',{tk:()=>openTasks()});}
+  else if(pend)modal('<div style="font-size:54px">📝</div><h2>還沒補考／補交的同學</h2>'+pend+'<div class="small" style="margin-top:6px">補好了就到「📝 缺考・缺交」點一下名字，改成「已補」。</div><div class="acts"><button class="btn pri" data-act="x">好的，開始上課</button><button class="btn" data-act="tk">打開缺考・缺交</button></div>','',{tk:()=>openTasks()});
 }
 let npTmp={text:'',add:false};
 function askNextPlan(c,then){
@@ -1302,7 +1325,7 @@ $('#view-shop').addEventListener('change',e=>{if(e.target.dataset.ptc!=null){con
   $('#view-class').addEventListener('pointerdown',e=>{
     if(!editMode)return;const el=e.target.closest('.deco[data-did]');if(!el)return;e.preventDefault();
     const map=$('#map'),k=map.getBoundingClientRect().width/1920;
-    drag={el:el,k:S.settings.teacherView?-k:k,sx:e.clientX,sy:e.clientY,l:parseFloat(el.style.left),t:parseFloat(el.style.top)};el.setPointerCapture(e.pointerId);el.classList.add('dragging');});
+    drag={el:el,k:TV()?-k:k,sx:e.clientX,sy:e.clientY,l:parseFloat(el.style.left),t:parseFloat(el.style.top)};el.setPointerCapture(e.pointerId);el.classList.add('dragging');});
   $('#view-class').addEventListener('pointermove',e=>{if(!drag)return;drag.el.style.left=(drag.l+(e.clientX-drag.sx)/drag.k)+'px';drag.el.style.top=(drag.t+(e.clientY-drag.sy)/drag.k)+'px';});
   $('#view-class').addEventListener('pointerup',e=>{if(!drag)return;const el=drag.el,c=cur();el.classList.remove('dragging');
     const g=el.dataset.dg,d=c&&c.decos&&(c.decos[g]||[]).find(x=>x.id===el.dataset.did);
@@ -1908,8 +1931,63 @@ $('#draw').addEventListener('change',e=>{if(e.target.dataset.dr==='nr'){S.settin
 
 $('#pDraw').addEventListener('click',openDraw);
 
+/* ---------- 缺考・缺交作業 ---------- */
+const TK={exam:{icon:'📝',name:'考試',miss:'缺考',done:'已補考'},hw:{icon:'📄',name:'作業',miss:'缺交',done:'已補交'}};
+let tkNew={type:'exam',name:'',date:null},tkShowDone=false;
+function tkList(c){c.tasks=c.tasks||[];return c.tasks;}
+function tkPending(c){const m={};(c.tasks||[]).forEach(t=>{for(const no in t.miss){if(!t.miss[no].done&&c.students.some(s=>s.no===+no))(m[no]=m[no]||[]).push(t);}});return m;}
+function tkPendingCount(c){return Object.keys(tkPending(c)).length;}
+function tkPendingHTML(c){const m=tkPending(c),nos=Object.keys(m).map(Number).sort((a,b)=>a-b);if(!nos.length)return '';
+  return '<div class="tkpend">'+nos.map(no=>{const s=c.students.find(x=>x.no===no);return no+' '+esc(s?s.name:'')+'：'+m[no].map(t=>TK[t.type].icon+esc(t.name)+' '+TK[t.type].miss).join('、');}).join('<br>')+'</div>';}
+function taskStickers(c){const m=tkPending(c);let h='';
+  SEATS.forEach(st=>{const no=c.seats[st.id];if(no==null||!m[no])return;const ts=m[no],e=ts.some(t=>t.type==='exam'),w=ts.some(t=>t.type==='hw');
+    h+='<div class="tsticker" style="left:'+(st.x-10)+'px;top:'+(st.y-26)+'px">'+(e?'📝':'')+(w?'📄':'')+(ts.length>1?'×'+ts.length:'')+'</div>';});return h;}
+function openTasks(){const c=cur();if(!c){toast('還沒有班級');return;}tkNew={type:'exam',name:'',date:isoDay()};tkShowDone=false;$('#tasks').classList.remove('hidden');renderTasks(true);}
+function closeTasks(){$('#tasks').classList.add('hidden');renderView();}
+function renderTasks(first){
+  const c=cur();if(!c)return;const ts=tkList(c),studs=c.students.slice().sort((a,b)=>a.no-b.no),pm=tkPending(c);
+  let h='<div class="dcard'+(first?'':' noanim')+'"><div class="dhead" style="background:linear-gradient(90deg,#ea580c,#db2777)"><b>📝 缺考・缺交作業　<span style="font-weight:600;font-size:18px">'+esc(c.name)+'</span></b><button class="dx" data-tk="close">✕</button></div>';
+  const nos=Object.keys(pm).map(Number).sort((a,b)=>a-b);
+  h+='<div class="tksum"><b>還沒補的同學（'+nos.length+' 人）</b>：'+(nos.length?nos.map(no=>{const s=c.students.find(x=>x.no===no);return no+' '+esc(s?s.name:'')+'（'+pm[no].map(t=>esc(t.name)+' '+TK[t.type].miss).join('、')+'）';}).join('　'):'沒有，大家都交齊了 🎉')+'</div>';
+  h+='<div class="drow" style="padding-top:4px"><b>新增一筆：</b></div><div class="tkadd"><span class="seg">'+Object.keys(TK).map(k=>'<button class="'+(tkNew.type===k?'on':'')+'" data-tk="ntype" data-v="'+k+'">'+TK[k].icon+' '+TK[k].name+'</button>').join('')+'</span>'+
+    '<input type="text" id="tkName" maxlength="30" value="'+esc(tkNew.name)+'" placeholder="'+(tkNew.type==='exam'?'例如：直笛〈小蜜蜂〉吹奏':'例如：音樂家學習單')+'">'+
+    '<label style="font-weight:800">'+(tkNew.type==='exam'?'考試日期':'繳交日期')+' <input type="date" id="tkDate" value="'+(tkNew.date||isoDay())+'"></label><button class="btn pri" data-tk="add">＋ 新增</button></div>';
+  const list=ts.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.t-a.t);
+  const isOpen=t=>!Object.keys(t.miss).length||Object.values(t.miss).some(x=>!x.done);
+  const open=list.filter(isOpen),closed=list.filter(t=>!isOpen(t));
+  const card=t=>{const T=TK[t.type],ms=Object.keys(t.miss),pend=ms.filter(n=>!t.miss[n].done).length;
+    let x='<div class="tkcard '+t.type+'"><div class="tkh"><span>'+T.icon+'</span><span class="tkt">'+esc(t.name)+'</span><span class="tkd">'+T.name+'・'+fmtD(t.date)+'</span><span class="tkn">'+(ms.length?T.miss+' '+ms.length+' 人，'+(pend?'<span style="color:#dc2626">還沒補 '+pend+' 人</span>':'<span style="color:#16a34a">全部補完 ✔</span>'):'<span style="color:#64748b">點名字標記'+T.miss+'</span>')+'</span>'+
+      '<button class="btn sm" data-tk="ren" data-id="'+t.id+'" title="改名稱">✏️</button><button class="btn sm danger" data-tk="del" data-id="'+t.id+'">刪除</button></div><div class="tkgrid">';
+    studs.forEach(s=>{const m=t.miss[s.no],cl=m?(m.done?'done':'miss'):'';
+      x+='<button class="'+cl+'" data-tk="tg" data-id="'+t.id+'" data-no="'+s.no+'">'+s.no+' '+esc(s.name)+(m?(m.done?' ✔'+T.done:' ✗'+T.miss):'')+'</button>';});
+    return x+'</div></div>';};
+  if(!list.length)h+='<div class="small" style="padding:10px 18px">還沒有考試或作業，先在上面新增一筆。</div>';
+  h+=open.map(card).join('');
+  if(closed.length)h+='<div class="drow"><button class="btn sm" data-tk="showdone">'+(tkShowDone?'▲ 收起':'▼ 顯示')+'已經全部補完的項目（'+closed.length+'）</button></div>'+(tkShowDone?closed.map(card).join(''):'');
+  h+='<div class="small" style="padding:6px 18px 14px">點名字切換：沒標記 → <b style="color:#b91c1c">✗ 缺考／缺交</b> → <b style="color:#166534">✔ 已補</b> → 取消。還沒補的同學，座位左上角會出現 📝（缺考）或 📄（缺交），開始上課時也會跳出提醒。要通知導師，可以用「📨 通知單」→「📝 缺考・缺交」。</div></div>';
+  $('#tasks').innerHTML=h;
+}
+$('#tasks').addEventListener('click',e=>{
+  if(e.target.id==='tasks'){closeTasks();return;}
+  const b=e.target.closest('[data-tk]');if(!b)return;const c=cur(),a=b.dataset.tk;if(!c)return;
+  const keep=()=>{const n=$('#tkName'),d=$('#tkDate');if(n)tkNew.name=n.value;if(d)tkNew.date=d.value;};
+  if(a==='close'){closeTasks();return;}
+  if(a==='ntype'){keep();tkNew.type=b.dataset.v;}
+  else if(a==='add'){keep();const nm=tkNew.name.trim();if(!nm){toast('請先輸入名稱');$('#tkName').focus();return;}
+    const t={id:uid(),type:tkNew.type,name:nm,date:tkNew.date||isoDay(),t:Date.now(),miss:{}};
+    if(t.type==='exam'){const a2=(c.att||{})[t.date];if(a2)for(const no in a2.st)if(ATT[a2.st[no]]&&ATT[a2.st[no]].away)t.miss[no]={t:Date.now(),done:false};}
+    tkList(c).push(t);save();tkNew.name='';const k=Object.keys(t.miss).length;toast(TK[t.type].icon+' 已新增「'+nm+'」'+(k?'，已自動標記當天不在教室的 '+k+' 人':''));}
+  else if(a==='tg'){const t=tkList(c).find(x=>x.id===b.dataset.id);if(!t)return;const no=b.dataset.no,m=t.miss[no];
+    if(!m)t.miss[no]={t:Date.now(),done:false};else if(!m.done){m.done=true;m.doneT=Date.now();}else delete t.miss[no];save();}
+  else if(a==='del'){const t=tkList(c).find(x=>x.id===b.dataset.id);if(!t)return;confirmBox('刪除「'+esc(t.name)+'」？','這筆的缺考／缺交紀錄會一起刪除。','刪除',()=>{c.tasks=tkList(c).filter(x=>x.id!==t.id);save();renderTasks();},true);return;}
+  else if(a==='ren'){const t=tkList(c).find(x=>x.id===b.dataset.id);if(!t)return;const v=prompt('修改名稱',t.name);if(v&&v.trim()){t.name=v.trim().slice(0,30);save();}}
+  else if(a==='showdone')tkShowDone=!tkShowDone;
+  renderTasks();
+});
+$('#tasks').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){closeTasks();return;}if(e.key==='Enter'&&e.target.id==='tkName'){e.preventDefault();$('#tasks [data-tk=add]').click();}});
+
 /* ---------- 導師通知單 ---------- */
-const NT_TYPES=[{k:'miss',name:'🎒 缺帶用品'},{k:'exam',name:'📝 缺考名單'},{k:'test',name:'📅 考試通知'},{k:'order',name:'⚠️ 秩序欠佳'}];
+const NT_TYPES=[{k:'todo',name:'📝 缺考・缺交'},{k:'miss',name:'🎒 缺帶用品'},{k:'exam',name:'📝 缺考名單'},{k:'test',name:'📅 考試通知'},{k:'order',name:'⚠️ 秩序欠佳'}];
 let NT=null;
 function dayStr(d){return isoDay(d);}
 function fmtD(iso){if(!iso)return '';const p=iso.split('-');return (+p[1])+'/'+(+p[2]);}
@@ -1923,13 +2001,14 @@ function ntRows(c){
   if(NT.type==='order'){const t0=new Date(NT.from+'T00:00').getTime(),t1=new Date(NT.to+'T23:59').getTime(),m={},per={};
     (c.lessons||[]).filter(l=>l.start>=t0&&l.start<=t1).forEach(l=>{for(const no in l.totals){m[no]=(m[no]||0)+l.totals[no];if(l.totals[no]>S.settings.limit)(per[no]=per[no]||[]).push(fmtD(isoDay(new Date(l.start))));}});
     return studs.filter(s=>(m[s.no]||0)>=NT.orderMin).map(s=>({no:s.no,name:s.name,n:m[s.no],info:'被提醒 '+m[s.no]+' 次'+(per[s.no]?'（'+per[s.no].join('、')+' 超過 '+S.settings.limit+' 次）':'')}));}
+  if(NT.type==='todo'){const m=tkPending(c);return studs.filter(s=>m[s.no]).map(s=>({no:s.no,name:s.name,n:m[s.no].length,info:m[s.no].map(t=>fmtD(t.date)+' '+t.name+TK[t.type].miss).join('；')}));}
   if(NT.type==='exam'){if(!NT.examPick){NT.examPick={};const a=(c.att||{})[NT.examDate];if(a)for(const no in a.st)if(ATT[a.st[no]]&&ATT[a.st[no]].away)NT.examPick[no]=true;}
     return studs.filter(s=>NT.examPick[s.no]).map(s=>{const a=(c.att||{})[NT.examDate],k=a&&a.st[s.no];return {no:s.no,name:s.name,info:k&&ATT[k]?ATT[k].name:''};});}
   return [];
 }
-function ntDefaultNote(){return {miss:'以上同學音樂課忘記帶用品，麻煩導師協助提醒，下次上課記得帶齊，謝謝！',exam:'以上同學音樂課考試當天未參加，將另外安排補考時間，麻煩導師協助轉達，謝謝！',test:'麻煩導師協助提醒同學提早準備，謝謝！',order:'以上同學近期音樂課上課秩序需要加強，麻煩導師協助關心與提醒，謝謝！'}[NT.type];}
+function ntDefaultNote(){return {todo:'以上同學音樂課的考試或作業還沒有完成，麻煩導師協助提醒，盡快找音樂老師補考或補交，謝謝！',miss:'以上同學音樂課忘記帶用品，麻煩導師協助提醒，下次上課記得帶齊，謝謝！',exam:'以上同學音樂課考試當天未參加，將另外安排補考時間，麻煩導師協助轉達，謝謝！',test:'麻煩導師協助提醒同學提早準備，謝謝！',order:'以上同學近期音樂課上課秩序需要加強，麻煩導師協助關心與提醒，謝謝！'}[NT.type];}
 function slipHTML(c){
-  const rows=ntRows(c).filter(r=>!NT.excl[r.no]),title={miss:'缺帶用品名單',exam:'缺考名單',test:'考試通知',order:'上課秩序關心名單'}[NT.type];
+  const rows=ntRows(c).filter(r=>!NT.excl[r.no]),title={todo:'缺考・缺交作業名單',miss:'缺帶用品名單',exam:'缺考名單',test:'考試通知',order:'上課秩序關心名單'}[NT.type];
   const tutor=c.tutor?esc(c.tutor)+' 導師':'導師';let body='';
   if(NT.type==='miss')body='<div class="slmeta">期間：'+fmtD(NT.from)+(NT.from!==NT.to?' ～ '+fmtD(NT.to):'')+'</div>';
   if(NT.type==='order')body='<div class="slmeta">期間：'+fmtD(NT.from)+' ～ '+fmtD(NT.to)+'</div>';
@@ -2478,7 +2557,7 @@ function exitPresent(){
 $('#btnFull').addEventListener('click',enterPresent);
 $('#pExit').addEventListener('click',exitPresent);
 $('#pUndo').addEventListener('click',undo);
-$('#pTV').addEventListener('click',()=>{S.settings.teacherView=!S.settings.teacherView;save();renderAll();toast(S.settings.teacherView?'🧑‍🏫 老師視角：黑板在下方':'👀 學生視角：黑板在上方');});
+$('#pTV').addEventListener('click',()=>{setTV(!TV());renderAll();toast(TV()?'🧑‍🏫 老師視角：黑板在下方':'👀 學生視角：黑板在上方');});
 $('#pLesson').addEventListener('click',()=>{const c=cur();if(!c)return;c.session?endLesson():startLesson();});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('present')){document.body.classList.remove('present');renderAll();}setTimeout(fitMap,200);});
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;view=b.dataset.view;renderView();});
@@ -2507,8 +2586,9 @@ $('#view-class').addEventListener('click',e=>{
   {const bo=e.target.closest('[data-bonus]');if(bo&&!editMode){bonusStar(+bo.dataset.bonus);return;}}
   {const gc=e.target.closest('[data-gc]');if(gc&&!editMode){const g=+gc.dataset.gc;gcShow[g]=Date.now()+10000;renderClass();clearTimeout(gcShow['t'+g]);gcShow['t'+g]=setTimeout(()=>{delete gcShow[g];if(view==='class')renderClass();},10050);return;}}
   if(e.target.closest('[data-attopen]')){openAtt();return;}
+  if(e.target.closest('[data-tasks]')){openTasks();return;}
   if(e.target.closest('#btnLog')){const c=cur();if(c&&c.session)showLessonLog(c,null);else if(c&&c.lessons.length)showLessonLog(c,c.lessons.length-1);else toast('還沒有課堂紀錄');return;}
-  if(e.target.closest('#btnTV')){S.settings.teacherView=!S.settings.teacherView;save();renderAll();toast(S.settings.teacherView?'🧑‍🏫 老師視角：黑板在下方':'👀 學生視角：黑板在上方');return;}
+  if(e.target.closest('#btnTV')){setTV(!TV());renderAll();toast(TV()?'🧑‍🏫 老師視角：黑板在下方':'👀 學生視角：黑板在上方');return;}
   if(e.target.closest('#btnPrint')){askPrint();return;}
   {const gx=e.target.closest('[data-gsx]');if(gx&&!e.target.closest('[data-gs]')){const g=gx.dataset.gsx;S.settings.gsOpen=S.settings.gsOpen||{};S.settings.gsOpen[g]=!S.settings.gsOpen[g];save();renderClass();return;}}
   {const gb=e.target.closest('[data-gs]');if(gb){const c=cur();if(!c)return;if(!c.session){toast('請先按「▶ 開始上課」');return;}
@@ -2540,6 +2620,7 @@ document.addEventListener('keydown',e=>{
   if(!$('#clean').classList.contains('hidden')){if(e.key==='Escape')settleClean();return;}
   if(!$('#box').classList.contains('hidden')){if(e.key==='Escape')closeBox();return;}
   if(!$('#att').classList.contains('hidden')){if(e.key==='Escape')closeAtt();return;}
+  if(!$('#tasks').classList.contains('hidden')){if(e.key==='Escape')closeTasks();return;}
   if(!$('#draw').classList.contains('hidden')){if(e.key==='Escape')closeDraw();else if((e.key===' '||e.key==='Enter')&&!e.target.matches('input,textarea,select,button')){e.preventDefault();doDraw();}return;}
   if($('#overlay').classList.contains('show')){if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();closeModal();}return;}
   if(e.target.matches('input,textarea,select'))return;
