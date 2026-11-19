@@ -129,6 +129,10 @@ label.file input{display:none}
 .mapbox{position:relative;width:100%;overflow:hidden}
 .map{position:absolute;top:0;width:1920px;height:1080px;transform-origin:0 0;background:#fff3e2;border-radius:24px}
 .map.tv>*{rotate:180deg}
+.treegrp{position:absolute;left:740px;top:90px;width:530px;height:500px;pointer-events:none}
+.treein{position:absolute;left:-740px;top:-90px;width:1920px;height:1080px}
+.treein>*{pointer-events:auto}
+.treein>.fruit,.treein>.leaffall,.treein>.treemood{pointer-events:none}
 .btn.tvon{background:#0ea5e9;color:#fff;border-color:#0284c7}
 .board{position:absolute;left:273px;top:22px;width:1408px;height:40px;background:#00c060;border-radius:20px;color:#fff;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center;letter-spacing:8px}
 .piano{position:absolute;left:676px;top:80px;width:154px;height:60px;background:#000;color:#fff;border-radius:30px;font-weight:900;font-size:24px;display:flex;align-items:center;justify-content:center;letter-spacing:4px}
@@ -905,7 +909,7 @@ function treeHTML(c){
   const stt=ses?treeState(ses.apples):'lush';
   const leaf=full?['#84cc16','#a3e635']:stt==='yellow'?['#d4a72c','#e3c650']:stt==='sparse'?['#a3a847','#c2c066']:['#4caf50','#6cc96b'];
   const trunk=stt==='dead'?'#6b5644':'#8b5a2b';
-  let h='<svg class="tree '+stt+'" style="position:absolute;left:760px;top:100px;overflow:visible" width="480" height="470" viewBox="760 100 480 470">'+
+  let h='<div class="treegrp"><div class="treein" id="treeIn"><svg class="tree '+stt+'" style="position:absolute;left:760px;top:100px;overflow:visible" width="480" height="470" viewBox="760 100 480 470">'+
     '<ellipse cx="1000" cy="545" rx="130" ry="14" fill="'+(stt==='dead'?'#cbb89a':'#e8d5b5')+'"/>';
   const br='<g stroke="'+trunk+'" stroke-linecap="round" fill="none"><path d="M1000 400 L1000 175" stroke-width="16"/><path d="M1000 330 Q950 290 890 250" stroke-width="12"/><path d="M1000 310 Q1060 270 1115 235" stroke-width="12"/><path d="M945 285 L905 205" stroke-width="7"/><path d="M1060 270 L1095 190" stroke-width="7"/><path d="M1000 230 L960 165" stroke-width="6"/><path d="M1000 210 L1040 150" stroke-width="6"/><path d="M890 250 L850 230" stroke-width="5"/><path d="M1115 235 L1160 225" stroke-width="5"/></g>';
   h+='<path d="M982 545 L986 400 Q960 370 925 360 L930 352 Q965 360 990 385 L995 330 L1005 330 L1010 385 Q1035 360 1070 352 L1075 360 Q1040 370 1014 400 L1018 545 Z" fill="'+trunk+'"/>';
@@ -923,13 +927,13 @@ function treeHTML(c){
   h+='<div class="signpost"></div><div class="classsign" style="font-size:'+fs+'px">'+esc(nm)+'</div>';
   h+='<div class="treelabel'+(full?' full':'')+'">'+(ses?'🍎 '+ses.apples+' / '+(ses.applesStart||lessonApples()):'上課就會長 '+lessonApples()+' 顆🍎')+'</div>';
   if(ses&&!editMode)h+='<div class="treehit" data-tree="1" title="秩序不好？點一下，蘋果掉一顆"></div>';
-  return h;
+  return h+'</div></div>';
 }
 function playDrop(){
   const d=pendingDrop;pendingDrop=null;if(!d||view!=='class')return;
   const map=$('#map'),q=SLOTS[Math.max(0,Math.min(SLOTS.length-1,d.idx))];if(!map||!q)return;
   const f=document.createElement('div');f.className='fruit fall';f.style.left=(q[0]-20)+'px';f.style.top=(q[1]-20)+'px';
-  f.style.setProperty('--dy',(545-q[1])+'px');f.innerHTML=APPLE;map.appendChild(f);setTimeout(()=>f.remove(),1600);
+  f.style.setProperty('--dy',(545-q[1])+'px');f.innerHTML=APPLE;($('#treeIn')||map).appendChild(f);setTimeout(()=>f.remove(),1600);
 }
 const ROLES=[{k:'lead',icon:'👑',name:'組長'},{k:'vice',icon:'🎖️',name:'副組長'},{k:'score',icon:'📝',name:'加分長'},{k:'equip',icon:'🔧',name:'設備長'},{k:'music',icon:'🎵',name:'音樂長'}];
 function roleIcons(c,s){
