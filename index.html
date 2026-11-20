@@ -807,7 +807,7 @@ function setPhoto(cid,no,data){const k=phKey(cid,no);photoCache[k]=data;if(!stor
 function isTablet(){try{return matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints>1&&/Macintosh|iPad|Android/.test(navigator.userAgent));}catch(e){return false;}}
 function TV(){let v=null;try{v=localStorage.getItem('cog_tv');}catch(e){}return v==null?isTablet():v==='1';}
 function setTV(on){try{localStorage.setItem('cog_tv',on?'1':'0');}catch(e){}}
-const DEF_SET={limit:3,recoverMin:10,interval:5,perInterval:2,goal:30,photoOnLimit:true,
+const DEF_SET={warnSfx:true,limit:3,recoverMin:10,interval:5,perInterval:2,goal:30,photoOnLimit:true,
   limitMsg:'請下課來找老師聊聊 🙂',reward:'全班獎勵時間！',star:true,dropFruit:true,lessonApples:10,graceMin:15};
 const DEF_SHOP=[
   {icon:'🎵',name:'下課前聽一首全班選的歌',cost:1},
@@ -1107,14 +1107,14 @@ function mark(no){
   if(!c.session){const L=graceLesson(c);if(!L){toast('請先按「▶ 開始上課」');return;}
     L.totals[no]=(L.totals[no]||0)+1;(L.mLog=L.mLog||[]).push({t:Date.now(),no:no,n:L.totals[no],after:1});L.after=L.after||{};L.after[no]=(L.after[no]||0)+1;c.graceUndo=(c.graceUndo||[]).concat(no);save();renderClass();
     const t=document.getElementById('t'+no);if(t)t.classList.add('bump');
-    toast('🕒 下課後補記：'+no+' 號 '+s.name+'（記到剛結束的這節課，共 '+L.totals[no]+' 次）');
+    sfxWarn(L.totals[no],S.settings.limit);toast('🕒 下課後補記：'+no+' 號 '+s.name+'（記到剛結束的這節課，共 '+L.totals[no]+' 次）');
     if(L.totals[no]>S.settings.limit)showLimit(c,s,false);return;}
   const ses=c.session,now=Date.now();
   ses.undo.push({no:no,prev:ses.counts[no]||0,prevLast:ses.last[no]||null,iv:ses.iv,g:s.group});(ses.mLog=ses.mLog||[]).push({t:Date.now(),no:no,n:(ses.totals[no]||0)+1});
   if(ses.undo.length>60)ses.undo.shift();
   ses.counts[no]=(ses.counts[no]||0)+1;ses.last[no]=now;ses.totals[no]=(ses.totals[no]||0)+1;
   ses.ivG[s.group]=(ses.ivG[s.group]||0)+1;ses.ivAll=(ses.ivAll||0)+1;
-  save();renderClass();
+  save();renderClass();sfxWarn(ses.counts[no],S.settings.limit);
   const t=document.getElementById('t'+no);if(t){t.classList.add('bump');}
   if(ses.counts[no]>S.settings.limit){
     let dropped=false;
@@ -1826,6 +1826,13 @@ const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+
 function absentSet(c){if(!c.absent||c.absent.day!==todayKey())c.absent={day:todayKey(),nos:[]};const set=new Set(c.absent.nos);const a=attDay(c,isoDay());for(const no in a.st)if(ATT[a.st[no]]&&ATT[a.st[no]].away)set.add(+no);return set;}
 function ensureAudio(){try{if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC();}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();}catch(e){}}
 function tone(f,len,type,vol){try{if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type||'triangle';o.frequency.value=f;g.gain.setValueAtTime(vol||0.25,t);g.gain.exponentialRampToValueAtTime(0.0001,t+len);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+len+0.02);}catch(e){}}
+function sfxOn(){return S.settings.warnSfx!==false;}
+function slide(f1,f2,len,type,vol,delay){setTimeout(()=>{try{if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+len);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.02);g.gain.setValueAtTime(vol,t+len*0.7);g.gain.exponentialRampToValueAtTime(0.0001,t+len);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+len+0.02);}catch(e){}},delay||0);}
+function sfxWarn(n,lim){if(!sfxOn())return;ensureAudio();
+  if(n<lim){tone(784,0.16,'sine',0.28);setTimeout(()=>tone(587,0.28,'sine',0.28),150);}
+  else if(n===lim){[880,740,587].forEach((f,i)=>setTimeout(()=>tone(f,i===2?0.35:0.14,'square',0.13),i*140));}
+  else{slide(220,180,0.32,'sawtooth',0.16,0);slide(220,150,0.5,'sawtooth',0.16,380);}}
+function sfxMinus(){if(!sfxOn())return;ensureAudio();slide(440,392,0.2,'triangle',0.3,0);slide(392,330,0.2,'triangle',0.3,220);slide(330,220,0.55,'triangle',0.3,440);}
 function fanfare(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,i===3?0.6:0.18,'square',0.22),i*120));}
 function stuPool(c){const ab=absentSet(c);return c.students.filter(s=>s.group&&!ab.has(s.no)&&(DR.range===0||s.group===DR.range));}
 function grpPool(c){const ab=absentSet(c);const out=[];for(let g=1;g<=5;g++)if(c.students.some(s=>s.group===g&&!ab.has(s.no)))out.push(g);return out;}
@@ -2472,7 +2479,7 @@ function renderSettings(){
     num('recoverMin','連續沒被記多久回復一格（0＝不回復）',0,40,'分鐘')+
     num('interval','多久結算一次小組星星與全班能量',1,20,'分鐘')+
     num('graceMin','按下課後，還可以補記秩序幾分鐘（0＝不能補記）',0,60,'分鐘')+num('lessonApples','每節課一開始，樹上有幾顆蘋果',1,20,'顆')+chk('dropFruit','有人超過提醒次數時，也自動掉一顆蘋果')+
-    chk('photoOnLimit','超過次數時在大螢幕顯示照片')+
+    chk('photoOnLimit','超過次數時在大螢幕顯示照片')+chk('warnSfx','提醒和扣分時播放音效')+
     chk('star','下課時顯示「今日安靜之星」')+chk('drawPhoto','抽籤結果顯示學生照片')+
     txt('limitMsg','照片下方的文字')+
     '</div><div class="small" style="margin-top:12px">以一堂 40 分鐘、每 5 分鐘結算一次來算，果子目標和長果子門檻是每個班分開設定的，請看下面的「各班果樹設定」。</div></div>'+
@@ -2593,7 +2600,7 @@ $('#view-class').addEventListener('click',e=>{
   {const gx=e.target.closest('[data-gsx]');if(gx&&!e.target.closest('[data-gs]')){const g=gx.dataset.gsx;S.settings.gsOpen=S.settings.gsOpen||{};S.settings.gsOpen[g]=!S.settings.gsOpen[g];save();renderClass();return;}}
   {const gb=e.target.closest('[data-gs]');if(gb){const c=cur();if(!c)return;if(!c.session){toast('請先按「▶ 開始上課」');return;}
     const g=+gb.dataset.gs,d=+gb.dataset.d,ses=c.session;ses.gScore=ses.gScore||{};const prev=ses.gScore[g]||0;if(d<0&&prev<=0)return;
-    ses.gScore[g]=prev+d;ses.gLog=ses.gLog||[];ses.gLog.push({t:Date.now(),g:g,d:d});ensureAudio();if(d>0){for(let i=0;i<Math.min(d,5);i++)setTimeout(()=>tone(880+i*110,0.12,'triangle',0.22),i*90);setTimeout(()=>tone(1320,0.22,'triangle',0.2),Math.min(d,5)*90);}else tone(330,0.15,'sine',0.15);if(d>0)toast('第 '+g+' 組 +'+d+' 分');ses.undo.push({type:'gs',g:g,d:d});if(ses.undo.length>60)ses.undo.shift();save();renderClass();
+    ses.gScore[g]=prev+d;ses.gLog=ses.gLog||[];ses.gLog.push({t:Date.now(),g:g,d:d});ensureAudio();if(d>0){for(let i=0;i<Math.min(d,5);i++)setTimeout(()=>tone(880+i*110,0.12,'triangle',0.22),i*90);setTimeout(()=>tone(1320,0.22,'triangle',0.2),Math.min(d,5)*90);}else sfxMinus();toast(d>0?'第 '+g+' 組 +'+d+' 分':'第 '+g+' 組 扣 '+(-d)+' 分');ses.undo.push({type:'gs',g:g,d:d});if(ses.undo.length>60)ses.undo.shift();save();renderClass();
     const el=document.getElementById('g'+g);if(el&&d>0)el.classList.add('win');return;}}
   if(e.target.closest('[data-lg]')){S.settings.legendOpen=!S.settings.legendOpen;save();renderClass();return;}
   if(e.target.closest('#btnEdit')){editMode=!editMode;selSeat=null;renderClass();return;}
