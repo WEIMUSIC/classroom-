@@ -581,6 +581,7 @@ body.present .cv{display:block}
 #tasks.hidden{display:none}
 .attbtn.sm3{font-size:15px;padding:5px 0;background:#fecaca;box-shadow:0 3px 0 #dc2626;margin-top:6px}
 .attbtn .tbdg{background:#dc2626;color:#fff;border-radius:10px;padding:0 6px;margin-left:4px;font-size:13px}
+.asticker{position:absolute;z-index:4;width:48px;height:48px;border-radius:50%;background:#dc2626;color:#fff;border:4px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:36px;font-weight:900;line-height:40px;text-align:center;pointer-events:none;font-family:Arial,sans-serif}
 .tsticker{position:absolute;z-index:4;background:#fff7ed;border:4px solid #ea580c;border-radius:22px;padding:0 8px;font-size:32px;line-height:1.3;font-weight:900;color:#c2410c;pointer-events:none;white-space:nowrap}
 .tkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:14px;padding:10px 12px;margin:0 18px}
 .tkadd input[type=text]{width:240px}
@@ -957,7 +958,7 @@ function playDrop(){
   const f=document.createElement('div');f.className='fruit fall';f.style.left=(q[0]-20)+'px';f.style.top=(q[1]-20)+'px';
   f.style.setProperty('--dy',(545-q[1])+'px');f.innerHTML=APPLE;($('#treeIn')||map).appendChild(f);setTimeout(()=>f.remove(),1600);
 }
-const ROLES=[{k:'lead',icon:'👑',name:'組長'},{k:'vice',icon:'🎖️',name:'副組長'},{k:'score',icon:'📝',name:'加分長'},{k:'equip',icon:'🔧',name:'設備長'},{k:'music',icon:'🎵',name:'音樂長'}];
+const ROLES=[{k:'lead',icon:'👑',name:'組長'},{k:'vice',icon:'🎖️',name:'副組長'},{k:'score',icon:'📝',name:'加分長'},{k:'equip',icon:'💻',name:'設備長'},{k:'music',icon:'🎵',name:'音樂長'}];
 function roleIcons(c,s){
   const r=c.roles||{},out=[];
   if(s.group&&r['lead_'+s.group]===s.no)out.push(ROLES[0]);
@@ -1028,7 +1029,7 @@ function renderClass(){
      }else{
        h+='<div class="'+cls+' mini" data-gsx="'+G.g+'" style="left:'+G.gx+'px;top:'+(G.cy-78)+'px;border-color:'+G.fl+'" title="打開加分面板"><b class="gse" style="background:'+G.fl+'">＋</b><div class="gsv">'+v+'</div><div class="gsl">本節分數</div></div>';
      }});}
-  h+=beastsHTML(c)+stickers(c,st=>({x:st.x,y:st.y}))+missStickers(c)+taskStickers(c)+(S.settings.legendOpen?legendHTML(c,560,600,'open'):legendHTML(c,560,600,'mini'))+'</div></div>';
+  h+=beastsHTML(c)+stickers(c,st=>({x:st.x,y:st.y}))+alertStickers(c)+(S.settings.legendOpen?legendHTML(c,560,600,'open'):legendHTML(c,560,600,'mini'))+'</div></div>';
   const un=c.students.filter(s=>!s.group).sort((a,b)=>a.no-b.no);
   if(un.length)h+='<div class="unseated"><b>未入座：</b>'+un.map(s=>'<button class="chip'+(selSeat==='u'+s.no?' on':'')+'" data-u="'+s.no+'">'+s.no+' '+esc(s.name)+'</button>').join('')+'</div>';
   h+='</div><aside class="board-side dateside"><div class="bt">今天</div><div id="dateBoard"></div>'+attMiniHTML(c)+'</aside></div>';
@@ -1777,7 +1778,7 @@ function renderAtt(){
       '<button class="'+(!k?'on ok':'')+'" data-at="st" data-no="'+s.no+'" data-v="">✅出席</button>'+Object.keys(ATT).map(x=>'<button class="'+(k===x?'on':'')+'" data-at="st" data-no="'+s.no+'" data-v="'+x+'">'+ATT[x].icon+ATT[x].name+'</button>').join('')+
       '</div><div class="asp">'+sup.map(it=>'<button class="'+(m.includes(it)?'miss':'')+'" data-at="miss" data-no="'+s.no+'" data-v="'+esc(it)+'">'+(m.includes(it)?'✗ 缺':'')+esc(it)+'</button>').join('')+'</div></div>';
   });
-  h+='</div><div class="small" style="padding:6px 18px 14px">請假、缺席和留在班上的同學，座位會變淡，也不會被抽籤抽到。缺帶的同學，座位右上角會出現 🎒。統計可以到「紀錄」頁查看。</div></div>';
+  h+='</div><div class="small" style="padding:6px 18px 14px">請假、缺席和留在班上的同學，座位會變淡，也不會被抽籤抽到。缺帶的同學，座位右上角會出現紅色驚嘆號 ❗。統計可以到「紀錄」頁查看。</div></div>';
   $('#att').innerHTML=h;
 }
 $('#att').addEventListener('click',e=>{
@@ -1946,6 +1947,10 @@ function tkPending(c){const m={};(c.tasks||[]).forEach(t=>{for(const no in t.mis
 function tkPendingCount(c){return Object.keys(tkPending(c)).length;}
 function tkPendingHTML(c){const m=tkPending(c),nos=Object.keys(m).map(Number).sort((a,b)=>a-b);if(!nos.length)return '';
   return '<div class="tkpend">'+nos.map(no=>{const s=c.students.find(x=>x.no===no);return no+' '+esc(s?s.name:'')+'：'+m[no].map(t=>TK[t.type].icon+esc(t.name)+' '+TK[t.type].miss).join('、');}).join('<br>')+'</div>';}
+function alertStickers(c){const m=tkPending(c),a=c.att&&c.att[isoDay()];let h='';
+  SEATS.forEach(st=>{const no=c.seats[st.id];if(no==null)return;const sup=a&&a.miss[no]&&a.miss[no].length?a.miss[no]:null,tk=m[no];if(!sup&&!tk)return;
+    const tip=[sup?'缺帶：'+sup.join('、'):'',tk?tk.map(t=>t.name+TK[t.type].miss).join('、'):''].filter(Boolean).join('；');
+    h+='<div class="asticker" style="left:'+(st.x+st.w-34)+'px;top:'+(st.y-22)+'px" title="'+esc(tip)+'">!</div>';});return h;}
 function taskStickers(c){const m=tkPending(c);let h='';
   SEATS.forEach(st=>{const no=c.seats[st.id];if(no==null||!m[no])return;const ts=m[no],e=ts.some(t=>t.type==='exam'),w=ts.some(t=>t.type==='hw');
     h+='<div class="tsticker" style="left:'+(st.x-10)+'px;top:'+(st.y-26)+'px">'+(e?'📝':'')+(w?'📄':'')+(ts.length>1?'×'+ts.length:'')+'</div>';});return h;}
@@ -1971,7 +1976,7 @@ function renderTasks(first){
   if(!list.length)h+='<div class="small" style="padding:10px 18px">還沒有考試或作業，先在上面新增一筆。</div>';
   h+=open.map(card).join('');
   if(closed.length)h+='<div class="drow"><button class="btn sm" data-tk="showdone">'+(tkShowDone?'▲ 收起':'▼ 顯示')+'已經全部補完的項目（'+closed.length+'）</button></div>'+(tkShowDone?closed.map(card).join(''):'');
-  h+='<div class="small" style="padding:6px 18px 14px">點名字切換：沒標記 → <b style="color:#b91c1c">✗ 缺考／缺交</b> → <b style="color:#166534">✔ 已補</b> → 取消。還沒補的同學，座位左上角會出現 📝（缺考）或 📄（缺交），開始上課時也會跳出提醒。要通知導師，可以用「📨 通知單」→「📝 缺考・缺交」。</div></div>';
+  h+='<div class="small" style="padding:6px 18px 14px">點名字切換：沒標記 → <b style="color:#b91c1c">✗ 缺考／缺交</b> → <b style="color:#166534">✔ 已補</b> → 取消。還沒補的同學，座位右上角會出現紅色驚嘆號 ❗，開始上課時也會跳出提醒。要通知導師，可以用「📨 通知單」→「📝 缺考・缺交」。</div></div>';
   $('#tasks').innerHTML=h;
 }
 $('#tasks').addEventListener('click',e=>{
@@ -2350,13 +2355,13 @@ function renderSetup(){
     {
       const r=c.roles||{},sorted=c.students.slice().sort((a,b)=>a.no-b.no);
       const sel=(key,list,warn)=>'<select class="inp" data-role="'+key+'"><option value="">（未設定）</option>'+list.map(st=>'<option value="'+st.no+'"'+(r[key]===st.no?' selected':'')+'>'+st.no+' '+esc(st.name)+'</option>').join('')+(warn?'<option value="'+r[key]+'" selected>'+warn+'</option>':'')+'</select>';
-      h+='<div class="panel"><h2>👑 幹部設定</h2><div class="small" style="margin-bottom:8px">設定後，座位上會出現符號：👑 組長、🎖️ 副組長、📝 加分長、🔧 設備長、🎵 音樂長。組長和副組長只能從那一組的同學裡選。</div><div class="tblwrap"><table><thead><tr><th>組別</th><th>👑 組長</th><th>🎖️ 副組長</th></tr></thead><tbody>';
+      h+='<div class="panel"><h2>👑 幹部設定</h2><div class="small" style="margin-bottom:8px">設定後，座位上會出現符號：👑 組長、🎖️ 副組長、📝 加分長、💻 設備長、🎵 音樂長。組長和副組長只能從那一組的同學裡選。</div><div class="tblwrap"><table><thead><tr><th>組別</th><th>👑 組長</th><th>🎖️ 副組長</th></tr></thead><tbody>';
       for(let g=1;g<=5;g++){
         const mem=sorted.filter(st=>st.group===g);
         const w=k=>{const no=r[k+'_'+g];if(no==null)return '';const st=c.students.find(x=>x.no===no);return st&&st.group!==g?'⚠️ '+no+' 號已換到別組':'';};
         h+='<tr><td>第 '+g+' 組</td><td>'+sel('lead_'+g,mem,w('lead'))+'</td><td>'+sel('vice_'+g,mem,w('vice'))+'</td></tr>';
       }
-      h+='</tbody></table></div><h3>全班幹部</h3><div class="row">📝 加分長 '+sel('score',sorted)+'　🔧 設備長 '+sel('equip',sorted)+'　🎵 音樂長 '+sel('music',sorted)+'</div></div>';
+      h+='</tbody></table></div><h3>全班幹部</h3><div class="row">📝 加分長 '+sel('score',sorted)+'　💻 設備長 '+sel('equip',sorted)+'　🎵 音樂長 '+sel('music',sorted)+'</div></div>';
     }
     h+='<div class="panel"><h2>📷 照片</h2><div class="small">照片只存在<b>這台電腦的這個瀏覽器</b>裡，不會上傳到網路，也不會同步到其他裝置。會自動裁成小正方形以節省空間。</div>'+
       '<div class="row"><label class="file btn pri">批次上傳照片<input type="file" id="bulk" accept="image/*" multiple></label><span class="small">檔名要包含座號，例如 05.jpg、05王小明.jpg</span>'+
