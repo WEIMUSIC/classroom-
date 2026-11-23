@@ -126,7 +126,7 @@ label.file input{display:none}
 .party .big{font-size:64px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;font-weight:700;font-size:16px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:60;max-width:90vw;text-align:center}
 #toast.show{opacity:1}
-.mapbox{position:relative;width:100%;overflow:hidden}
+.mapbox{position:relative;width:100%;overflow:hidden;background:#fff3e2;border-radius:18px}
 .map{position:absolute;top:0;width:1920px;height:1080px;transform-origin:0 0;background:#fff3e2;border-radius:24px}
 .map.tv>*{rotate:180deg}
 .treegrp{position:absolute;left:740px;top:90px;width:530px;height:500px;pointer-events:none}
@@ -735,6 +735,12 @@ tr.scrow:hover td{background:#f8fafc}
 .bzn{display:flex;gap:8px;justify-content:center;margin:6px 0}
 .bzn button{border:3px solid #f59e0b;background:#fffbeb;border-radius:14px;padding:8px 18px;font-size:22px;font-weight:900;color:#92400e;cursor:pointer;font-family:inherit}
 .bzn button.on{background:#f59e0b;color:#fff}
+@media (max-width:1400px){
+  .noteside{width:180px}.dateside{width:104px}
+  .cv{gap:8px}
+  .board-side .bt{font-size:17px}
+  .attbtn.sm2,.attbtn.sm3{font-size:13px;letter-spacing:-.5px}
+}
 </style>
 </head>
 <body>
@@ -1042,8 +1048,9 @@ function renderClass(){
 function fitMap(){
   const box=$('#mapbox'),map=$('#map');if(!box||!map||!box.offsetParent)return;
   const w=box.clientWidth,availH=window.innerHeight-box.getBoundingClientRect().top-(document.body.classList.contains('present')?8:70);
-  const k=Math.min(w/1920,Math.max(availH,320)/1080);
-  map.style.transform=TV()?'scale('+k+') translate(1920px,1080px) rotate(180deg)':'scale('+k+')';map.style.left=((w-1920*k)/2)+'px';box.style.height=(1080*k)+'px';
+  const X0=150,MW=1650;
+  const k=Math.min(w/MW,Math.max(availH,320)/1080);
+  map.style.transform=TV()?'scale('+k+') translate(1920px,1080px) rotate(180deg)':'scale('+k+')';map.style.left=((w-MW*k)/2-X0*k)+'px';box.style.height=(1080*k)+'px';
 }
 window.addEventListener('resize',fitMap);
 
