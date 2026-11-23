@@ -582,6 +582,7 @@ body.present .cv{display:block}
 .attbtn.sm3{font-size:15px;padding:5px 0;background:#fecaca;box-shadow:0 3px 0 #dc2626;margin-top:6px}
 .attbtn .tbdg{background:#dc2626;color:#fff;border-radius:10px;padding:0 6px;margin-left:4px;font-size:13px}
 .asticker{position:absolute;z-index:4;width:48px;height:48px;border-radius:50%;background:#dc2626;color:#fff;border:4px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:36px;font-weight:900;line-height:40px;text-align:center;pointer-events:none;font-family:Arial,sans-serif}
+.asticker.ax{font-size:30px}
 .tsticker{position:absolute;z-index:4;background:#fff7ed;border:4px solid #ea580c;border-radius:22px;padding:0 8px;font-size:32px;line-height:1.3;font-weight:900;color:#c2410c;pointer-events:none;white-space:nowrap}
 .tkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:14px;padding:10px 12px;margin:0 18px}
 .tkadd input[type=text]{width:240px}
@@ -1778,7 +1779,7 @@ function renderAtt(){
       '<button class="'+(!k?'on ok':'')+'" data-at="st" data-no="'+s.no+'" data-v="">✅出席</button>'+Object.keys(ATT).map(x=>'<button class="'+(k===x?'on':'')+'" data-at="st" data-no="'+s.no+'" data-v="'+x+'">'+ATT[x].icon+ATT[x].name+'</button>').join('')+
       '</div><div class="asp">'+sup.map(it=>'<button class="'+(m.includes(it)?'miss':'')+'" data-at="miss" data-no="'+s.no+'" data-v="'+esc(it)+'">'+(m.includes(it)?'✗ 缺':'')+esc(it)+'</button>').join('')+'</div></div>';
   });
-  h+='</div><div class="small" style="padding:6px 18px 14px">請假、缺席和留在班上的同學，座位會變淡，也不會被抽籤抽到。缺帶的同學，座位右上角會出現紅色驚嘆號 ❗。統計可以到「紀錄」頁查看。</div></div>';
+  h+='</div><div class="small" style="padding:6px 18px 14px">請假、缺席和留在班上的同學，座位會變淡，也不會被抽籤抽到。缺帶的同學，座位右上角會出現紅色叉叉 ✕。統計可以到「紀錄」頁查看。</div></div>';
   $('#att').innerHTML=h;
 }
 $('#att').addEventListener('click',e=>{
@@ -1949,8 +1950,9 @@ function tkPendingHTML(c){const m=tkPending(c),nos=Object.keys(m).map(Number).so
   return '<div class="tkpend">'+nos.map(no=>{const s=c.students.find(x=>x.no===no);return no+' '+esc(s?s.name:'')+'：'+m[no].map(t=>TK[t.type].icon+esc(t.name)+' '+TK[t.type].miss).join('、');}).join('<br>')+'</div>';}
 function alertStickers(c){const m=tkPending(c),a=c.att&&c.att[isoDay()];let h='';
   SEATS.forEach(st=>{const no=c.seats[st.id];if(no==null)return;const sup=a&&a.miss[no]&&a.miss[no].length?a.miss[no]:null,tk=m[no];if(!sup&&!tk)return;
-    const tip=[sup?'缺帶：'+sup.join('、'):'',tk?tk.map(t=>t.name+TK[t.type].miss).join('、'):''].filter(Boolean).join('；');
-    h+='<div class="asticker" style="left:'+(st.x+st.w-34)+'px;top:'+(st.y-22)+'px" title="'+esc(tip)+'">!</div>';});return h;}
+    let x=st.x+st.w-34;
+    if(sup){h+='<div class="asticker ax" style="left:'+x+'px;top:'+(st.y-22)+'px" title="'+esc('缺帶：'+sup.join('、'))+'">✕</div>';x-=44;}
+    if(tk)h+='<div class="asticker" style="left:'+x+'px;top:'+(st.y-22)+'px" title="'+esc(tk.map(t=>t.name+TK[t.type].miss).join('、'))+'">!</div>';});return h;}
 function taskStickers(c){const m=tkPending(c);let h='';
   SEATS.forEach(st=>{const no=c.seats[st.id];if(no==null||!m[no])return;const ts=m[no],e=ts.some(t=>t.type==='exam'),w=ts.some(t=>t.type==='hw');
     h+='<div class="tsticker" style="left:'+(st.x-10)+'px;top:'+(st.y-26)+'px">'+(e?'📝':'')+(w?'📄':'')+(ts.length>1?'×'+ts.length:'')+'</div>';});return h;}
