@@ -579,6 +579,35 @@ body.present .cv{display:block}
 @keyframes floatup{to{transform:translateY(-120vh) rotate(30deg)}}
 #tasks{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:48;display:flex;align-items:center;justify-content:center;padding:16px}
 #tasks.hidden{display:none}
+#cards{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:49;display:flex;align-items:center;justify-content:center;padding:16px}
+#cards.hidden{display:none}
+.rcprev{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding:12px 18px;background:#f1f5f9;margin:8px 18px;border-radius:14px}
+.rcprev .rcard{width:93mm;height:63mm;margin:0;box-shadow:0 6px 16px rgba(0,0,0,.15)}
+.cpage{width:285mm;height:196mm;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);break-after:page;page-break-after:always;overflow:hidden}
+.cpage:last-child{break-after:auto;page-break-after:auto}
+.cpage .rcard{margin:1.6mm;outline:.3mm dashed #94a3b8;outline-offset:1.2mm}
+.rcard{box-sizing:border-box;border:1.1mm solid var(--rc);border-radius:4mm;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;color:#1f2a44;font-family:inherit}
+.rcard.rSSR{background:linear-gradient(135deg,#fffbeb,#fef3c7 50%,#fffbeb)}
+.rcard.rSR{background:linear-gradient(135deg,#faf5ff,#f3e8ff)}
+.rcard.rR{background:linear-gradient(135deg,#eff6ff,#fff)}
+.rcard.blank{--rc:#d97706!important;--rc2:#fbbf24!important}
+.rch{background:linear-gradient(90deg,var(--rc),var(--rc2));color:#fff;font-weight:900;font-size:4.2mm;padding:1.3mm 3mm;display:flex;justify-content:space-between;align-items:center;letter-spacing:.3mm}
+.rcr{background:#fff;color:var(--rc);border-radius:3mm;padding:.2mm 2.2mm;font-size:3.2mm}
+.rcb{flex:1;display:flex;gap:2.5mm;padding:2mm 3mm 1mm;min-height:0}
+.rcbeast{width:27mm;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rcimg{width:25mm;height:25mm;border-radius:50%;background:radial-gradient(circle,#fff 30%,color-mix(in srgb,var(--rc2) 45%,#fff) 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;border:.5mm solid var(--rc2)}
+.rcimg img{width:23mm;height:23mm;object-fit:contain}
+.rcbn{font-size:2.9mm;font-weight:800;margin-top:1mm;color:#475569;white-space:nowrap}
+.rcp{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.rcpi{font-size:10mm;line-height:1.1}
+.rcpn{font-size:5.4mm;font-weight:900;color:var(--rc);line-height:1.2;margin:.5mm 0 1mm}
+.rcwho{font-size:3.1mm;font-weight:700;color:#475569}
+.rcwho2{font-size:4.6mm;font-weight:900}
+.rcdt{font-size:2.8mm;color:#64748b;margin-top:.5mm}
+.rcl{text-align:left;font-size:3.6mm;font-weight:800;margin:1.6mm 0;display:flex}
+.rcl u{flex:1;border-bottom:.3mm solid #94a3b8;margin-left:1mm}
+.rcf{border-top:.3mm dashed color-mix(in srgb,var(--rc) 50%,#fff);padding:1.3mm 3mm;font-size:2.8mm;display:flex;justify-content:space-between;color:#475569;font-weight:700}
+.rcno{color:#94a3b8;font-family:monospace}
 .attbtn.sm3{font-size:15px;padding:5px 0;background:#fecaca;box-shadow:0 3px 0 #dc2626;margin-top:6px}
 .attbtn .tbdg{background:#dc2626;color:#fff;border-radius:10px;padding:0 6px;margin-left:4px;font-size:13px}
 .asticker{position:absolute;z-index:4;width:48px;height:48px;border-radius:50%;background:#dc2626;color:#fff;border:4px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:36px;font-weight:900;line-height:40px;text-align:center;pointer-events:none;font-family:Arial,sans-serif}
@@ -785,7 +814,7 @@ tr.scrow:hover td{background:#f8fafc}
   </div>
 </div>
 <div id="draw" class="hidden"></div>
-<div id="att" class="hidden"></div><div id="tasks" class="hidden"></div>
+<div id="att" class="hidden"></div><div id="tasks" class="hidden"></div><div id="cards" class="hidden"></div>
 <div id="box" class="hidden"></div>
 <div id="clean" class="hidden"></div>
 <div id="bye" class="hidden"></div>
@@ -1452,7 +1481,8 @@ function guardPanelHTML(c){
   }
   h+='<div class="gcards">';for(let g=1;g<=5;g++)h+=guardCardHTML(c,g,false);h+='</div>';
   const log=(c.boxLog||[]).slice().reverse();
-  if(log.length){h+='<h3>🎁 盲盒紀錄</h3><div class="tblwrap" style="max-height:34vh"><table><thead><tr><th>日期</th><th>組別</th><th class="l">同學</th><th class="l">獎品</th><th>已發放</th></tr></thead><tbody>'+
+  h+='<div class="row" style="justify-content:space-between;align-items:center;margin-top:14px"><h3 style="margin:0">🎁 盲盒紀錄</h3><button class="btn pri" data-gd="cards">🖨️ 列印神獸獎勵兌換卡</button></div>';
+  if(log.length){h+='<div class="tblwrap" style="max-height:34vh"><table><thead><tr><th>日期</th><th>組別</th><th class="l">同學</th><th class="l">獎品</th><th>已發放</th></tr></thead><tbody>'+
     log.slice(0,60).map(r=>{const d=new Date(r.t);return '<tr><td>'+(d.getMonth()+1)+'/'+d.getDate()+'</td><td>第 '+r.g+' 組</td><td class="l">'+r.no+' '+esc(r.name)+'</td><td class="l"><span style="color:'+RAR[r.r||'N'].col+';font-weight:800">'+esc(r.icon)+' '+esc(r.prize)+'</span></td><td><input type="checkbox" data-given="'+r.id+'"'+(r.given?' checked':'')+'></td></tr>';}).join('')+'</tbody></table></div>';}
   return h+'</div>';
 }
@@ -1485,6 +1515,7 @@ function guardClick(e){
   else if(a==='bxdel'){boxPrizes().splice(+b.dataset.i,1);save();renderShop();}
   else if(a==='evoreset'){S.evoCost2=null;S.healCost2=null;S.rankAward=null;save();renderShop();toast('已恢復建議值');}
   else if(a==='bxreset'){S.boxPrizes=DEF_BOX.map(x=>Object.assign({},x));save();renderShop();}
+  else if(a==='cards')openCards('mine');
   else guardAction(a,+b.dataset.g,b);
   return true;
 }
@@ -1540,7 +1571,7 @@ function renderBox(first){
   mem.forEach(s=>{const r=b.boxes[s.no];
     if(r)h+='<div class="bx open" style="--rc:'+RAR[r.r||'N'].col+'"><div class="bxr">'+RAR[r.r||'N'].name+'</div><div class="bxi">'+esc(r.icon)+'</div><div class="bxp">'+esc(r.prize)+'</div><div class="bxn">'+s.no+' '+esc(s.name)+'</div></div>';
     else h+='<button class="bx'+(ab.has(s.no)?' away':'')+(boxPrizes().some(x=>x.elig)&&eligible(c,g,s.no)?' gold':'')+'" data-bxa="open" data-no="'+s.no+'" style="--gc:'+G.fl+'">'+(boxPrizes().some(x=>x.elig)&&eligible(c,g,s.no)?'<div class="bxg">✨ 大獎資格</div>':'')+'<div class="bxi">🎁</div><div class="bxn">'+s.no+' '+esc(s.name)+'</div>'+(ab.has(s.no)?'<div class="small">（今天不在）</div>':'')+'</button>';});
-  h+='</div><div class="drow center"><button class="btn" data-bxa="again">💬 再聽一次神獸的話</button>'+(op>=mem.length&&mem.length?'<button class="btn pri" data-bxa="reborn">🌟 全部開完了！送神獸回天上，換新蛋</button>':'')+'</div></div>';
+  h+='</div><div class="drow center"><button class="btn" data-bxa="again">💬 再聽一次神獸的話</button>'+(op?'<button class="btn" data-bxa="cards">🖨️ 列印這組的兌換卡</button>':'')+(op>=mem.length&&mem.length?'<button class="btn pri" data-bxa="reborn">🌟 全部開完了！送神獸回天上，換新蛋</button>':'')+'</div></div>';
   $('#box').innerHTML=h;
 }
 $('#box').addEventListener('click',e=>{
@@ -1548,6 +1579,7 @@ $('#box').addEventListener('click',e=>{
   const b=e.target.closest('[data-bxa]');if(!b)return;const c=cur(),a=b.dataset.bxa;
   if(a==='close')closeBox();
   else if(a==='reborn'){closeBox();guardAction('reborn',boxG);}
+  else if(a==='cards'){openCards('group',boxG);}
   else if(a==='skip'){clearInterval(twT);$('#spText').textContent=beastSpeech(c,boxG);b.classList.add('hidden');$('#spGo').classList.remove('hidden');}
   else if(a==='toBox'){clearInterval(twT);boxMode='grid';renderBox(false);}
   else if(a==='again'){boxMode='speech';renderBox(false);}
@@ -1555,10 +1587,54 @@ $('#box').addEventListener('click',e=>{
     if(b.classList.contains('shaking'))return;const no=+b.dataset.no,s=c.students.find(x=>x.no===no);ensureAudio();
     b.classList.add('shaking');let n=0;const tk=setInterval(()=>{tone(500+n*60,0.06,'square',0.12);n++;},110);
     setTimeout(()=>{clearInterval(tk);const x=pickPrize(c,boxG,no),gd=guard(c,boxG);gd.boxes[no]={icon:x.icon,prize:x.name,r:x.r};
-      c.boxLog=c.boxLog||[];c.boxLog.push({id:uid(),t:Date.now(),g:boxG,no:no,name:s?s.name:'',icon:x.icon,prize:x.name,r:x.r,given:false});save();
+      c.boxLog=c.boxLog||[];c.boxLog.push({id:uid(),t:Date.now(),g:boxG,bt:gd.type,no:no,name:s?s.name:'',icon:x.icon,prize:x.name,r:x.r,given:false});save();
       if(x.r==='SSR'||x.r==='SR')fanfare();else tone(880,0.3,'triangle',0.25);renderBox(false);
       const el=[...document.querySelectorAll('#box .bx.open')].find(d=>d.querySelector('.bxn').textContent.startsWith(no+' '));if(el){el.classList.add('pop');if(x.r==='SSR')el.classList.add('ssr');}},1200);
   }
+});
+
+/* ---------- 神獸獎勵兌換卡 ---------- */
+const RC2={N:'#94a3b8',R:'#60a5fa',SR:'#c084fc',SSR:'#fbbf24'};
+let CD={scope:'mine',g:0};
+function cardBeast(c,r){let t=r.bt;if(!t||!BEASTS[t]){const gd=c.guard&&c.guard[r.g];t=gd&&BEASTS[gd.type]&&gd.stage===4?gd.type:BEAST_DEF[r.g];}if(!BEASTS[t]||t==='random')t='maimai';return t;}
+function cardHTML(c,r){
+  const blank=!r.prize,rr=blank?'N':(r.r||'N'),t=r.bt&&BEASTS[r.bt]?r.bt:cardBeast(c,r),B=BEASTS[t],d=new Date(r.t||Date.now());
+  const img=B.st[4]||B.st[B.st.length-1];
+  return '<div class="rcard r'+rr+(blank?' blank':'')+'" style="--rc:'+RAR[rr].col+';--rc2:'+RC2[rr]+'"><div class="rch"><span>🎁 神獸獎勵兌換卡</span>'+(blank?'':'<span class="rcr">'+RAR[rr].name+'</span>')+'</div>'+
+    '<div class="rcb"><div class="rcbeast"><div class="rcimg">'+img+'</div><div class="rcbn">'+esc(B.name)+'的祝福</div></div>'+
+    '<div class="rcp">'+(blank?'<div class="rcl">獎品：<u></u></div><div class="rcl">得獎者：<u></u></div><div class="rcl">班級／組別：<u></u></div>':
+      '<div class="rcpi">'+esc(r.icon)+'</div><div class="rcpn">'+esc(r.prize)+'</div><div class="rcwho">'+esc(c.name)+'・第 '+r.g+' 組</div><div class="rcwho2">'+r.no+' 號 '+esc(r.name)+'</div><div class="rcdt">抽到日期 '+(d.getMonth()+1)+'/'+d.getDate()+'</div>')+'</div></div>'+
+    '<div class="rcf"><span>兌換日期＿＿＿＿</span><span>老師簽章＿＿＿＿</span>'+(blank?'':'<span class="rcno">No.'+esc(String(r.id||'').toUpperCase())+'</span>')+'</div></div>';
+}
+function cardList(scope){const c=cur(),out=[];
+  if(scope==='blank'){const ks=Object.keys(BEASTS).filter(k=>k!=='random');for(let i=0;i<9;i++)out.push({c:c,r:{bt:ks[i%ks.length],t:Date.now()}});return out;}
+  const cls=scope==='allpend'?S.classes:[c];
+  cls.forEach(k=>(k.boxLog||[]).forEach(r=>{
+    if(scope==='mine'&&r.given)return;if(scope==='allpend'&&r.given)return;
+    if(scope==='group'){const gd=guard(k,CD.g);if(r.g!==CD.g||r.t<(gd.start||0))return;}
+    out.push({c:k,r:r});}));
+  return out;}
+function openCards(scope,g){const c=cur();if(!c)return;CD={scope:scope||'mine',g:g||0};$('#cards').classList.remove('hidden');renderCards(true);}
+function renderCards(first){
+  const c=cur(),L=cardList(CD.scope),cnt=s=>{const o=CD.scope;CD.scope=s;const n=cardList(s).length;CD.scope=o;return n;};
+  const opts=[['mine','本班還沒發放',cnt('mine')+' 張'],['all','本班全部',cnt('all')+' 張'],['allpend','全部班級還沒發放',cnt('allpend')+' 張'],['blank','空白卡（手寫用）','9 張']];
+  if(CD.g)opts.unshift(['group','第 '+CD.g+' 組這一輪',cnt('group')+' 張']);
+  const pv=(L.length?L:cardList('blank')).slice(0,3);
+  let h='<div class="dcard'+(first?'':' noanim')+'" style="width:min(1180px,100%)"><div class="dhead" style="background:linear-gradient(90deg,#d97706,#db2777)"><b>🖨️ 神獸獎勵兌換卡　<span style="font-weight:600;font-size:18px">'+esc(c.name)+'</span></b><button class="dx" data-cd="close">✕</button></div>';
+  h+='<div class="drow"><b>要印哪些：</b><span class="seg">'+opts.map(o=>'<button class="'+(CD.scope===o[0]?'on':'')+'" data-cd="scope" data-v="'+o[0]+'">'+o[1]+'（'+o[2]+'）</button>').join('')+'</span></div>';
+  h+='<div class="small" style="padding:0 18px">一張 A4 橫印 9 張，沿虛線剪下。卡片顏色依獎品等級：<b style="color:'+RAR.N.col+'">普通</b>、<b style="color:'+RAR.R.col+'">稀有</b>、<b style="color:'+RAR.SR.col+'">超稀有</b>、<b style="color:'+RAR.SSR.col+'">傳說</b>。學生拿卡片來兌換時，簽名後到「🎁 盲盒紀錄」勾選「已發放」。</div>';
+  h+='<div class="rcprev">'+(L.length||CD.scope==='blank'?'':'<div class="small" style="width:100%">（目前沒有符合的盲盒紀錄，下面是空白卡的樣子）</div>')+pv.map(x=>cardHTML(x.c,x.r)).join('')+'</div>';
+  h+='<div class="drow center"><button class="btn pri" data-cd="print" style="font-size:20px"'+(L.length?'':' disabled')+'>🖨️ 列印 '+L.length+' 張</button></div></div>';
+  $('#cards').innerHTML=h;
+}
+$('#cards').addEventListener('click',e=>{
+  if(e.target.id==='cards'){$('#cards').classList.add('hidden');return;}
+  const b=e.target.closest('[data-cd]');if(!b)return;const a=b.dataset.cd;
+  if(a==='close'){$('#cards').classList.add('hidden');return;}
+  if(a==='scope'){CD.scope=b.dataset.v;renderCards(false);return;}
+  if(a==='print'){const L=cardList(CD.scope);if(!L.length)return;let out='';
+    for(let i=0;i<L.length;i+=9){out+='<div class="cpage">'+L.slice(i,i+9).map(x=>cardHTML(x.c,x.r)).join('')+'</div>';}
+    $('#printArea').innerHTML=out;toast('準備列印 '+L.length+' 張兌換卡');setTimeout(()=>{try{window.print();}catch(err){toast('這個視窗不能列印');}},200);}
 });
 
 /* ---------- 下課整理 cleanup check ---------- */
@@ -2642,6 +2718,7 @@ document.addEventListener('keydown',e=>{
   if(!$('#box').classList.contains('hidden')){if(e.key==='Escape')closeBox();return;}
   if(!$('#att').classList.contains('hidden')){if(e.key==='Escape')closeAtt();return;}
   if(!$('#tasks').classList.contains('hidden')){if(e.key==='Escape')closeTasks();return;}
+  if(!$('#cards').classList.contains('hidden')){if(e.key==='Escape')$('#cards').classList.add('hidden');return;}
   if(!$('#draw').classList.contains('hidden')){if(e.key==='Escape')closeDraw();else if((e.key===' '||e.key==='Enter')&&!e.target.matches('input,textarea,select,button')){e.preventDefault();doDraw();}return;}
   if($('#overlay').classList.contains('show')){if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();closeModal();}return;}
   if(e.target.matches('input,textarea,select'))return;
