@@ -1694,7 +1694,7 @@ function wallShow(){
   const els=[...document.querySelectorAll('#box .wg[data-bxa="open"]')];if(!els.length||boxAnim)return;boxAnim=true;ensureAudio();
   const turn=document.querySelector('#box .wturn'),P=showPrizeList(els.length);
   const sum={};P.forEach(x=>{sum[x.name]=sum[x.name]||{x:x,n:0};sum[x.name].n++;});
-  if(turn)turn.innerHTML='👀 神獸準備了這些禮物，看清楚喔！<div class="wsum">'+Object.values(sum).map(o=>'<span style="--rc:'+RAR[o.x.r||'N'].col+'">'+esc(o.x.icon)+' '+esc(o.x.name)+' ×'+o.n+'</span>').join('')+'</div>';
+  if(turn)turn.innerHTML='👀 神獸準備了這些禮物，看清楚喔！';
   els.forEach((el,i)=>{const x=P[i];if(!x)return;setTimeout(()=>{const f=document.createElement('div');f.className='wgface';f.style.setProperty('--rc',RAR[x.r||'N'].col);f.innerHTML='<div class="bxr">'+RAR[x.r||'N'].name+'</div><div class="wgi">'+esc(x.icon)+'</div><div class="wgp">'+esc(x.name)+'</div>';el.appendChild(f);el.classList.add('showing');tone(700+i*25,0.05,'sine',0.12);},i*70);});
   const t1=els.length*70+3800;
   setTimeout(()=>{if(turn)turn.innerHTML='🎁 禮物要蓋起來囉…';els.forEach((el,i)=>setTimeout(()=>{el.classList.remove('showing');el.classList.add('hiding');tone(500-i*10,0.05,'sine',0.1);},i*40));},t1);
