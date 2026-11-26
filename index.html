@@ -844,7 +844,7 @@ function setPhoto(cid,no,data){const k=phKey(cid,no);photoCache[k]=data;if(!stor
 function isTablet(){try{return matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints>1&&/Macintosh|iPad|Android/.test(navigator.userAgent));}catch(e){return false;}}
 function TV(){let v=null;try{v=localStorage.getItem('cog_tv');}catch(e){}return v==null?isTablet():v==='1';}
 function setTV(on){try{localStorage.setItem('cog_tv',on?'1':'0');}catch(e){}}
-const DEF_SET={warnSfx:true,limit:3,recoverMin:10,interval:5,perInterval:2,goal:30,photoOnLimit:true,
+const DEF_SET={warnSfx:true,graceConfirm:true,limit:3,recoverMin:10,interval:5,perInterval:2,goal:30,photoOnLimit:true,
   limitMsg:'請下課來找老師聊聊 🙂',reward:'全班獎勵時間！',star:true,dropFruit:true,lessonApples:10,graceMin:15};
 const DEF_SHOP=[
   {icon:'🎵',name:'下課前聽一首全班選的歌',cost:1},
@@ -1047,7 +1047,7 @@ function renderClass(){
   if(!c){m.innerHTML='<div class="empty">還沒有班級，請到「班級與照片」新增。</div>';return;}
   let h='';
   if(editMode)h+='<div class="notice">✏️ <b>調整座位中</b>：先點一個座位（或下方「未入座」的同學），再點另一個座位，兩個人就會交換。小組的裝飾也可以直接拖曳換位置。完成後按「✔ 完成調整」。</div>';
-  else if(!c.session&&graceLesson(c)){const L=graceLesson(c),left=Math.ceil((graceMin()*60000-(Date.now()-L.end))/60000);h+='<div class="notice" style="background:#ede9fe;border-color:#a78bfa">🕒 <b>下課後補記中</b>（還有約 '+left+' 分鐘）：現在點座位，次數會記到剛結束的這節課。　<button class="btn sm danger" id="btnCancelL">🗑️ 不小心按到上課？取消這節紀錄</button></div>';}
+  else if(!c.session&&graceLesson(c)){const L=graceLesson(c),left=Math.ceil((graceMin()*60000-(Date.now()-L.end))/60000);h+='<div class="notice" style="background:#ede9fe;border-color:#a78bfa">🕒 <b>下課後補記中</b>（還有約 '+left+' 分鐘）：點座位會先問要不要補記，也可以輸入座號＋Enter 直接補記。　<button class="btn sm danger" id="btnCancelL">🗑️ 不小心按到上課？取消這節紀錄</button></div>';}
   else if(!c.session)h+='<div class="notice">按上方「▶ 開始上課」後，才能開始記錄並累積小組星星和班級果樹的果子。</div>';
   h+='<div class="cv">'+notesHTML(c)+'<div class="cvm"><div class="mapbox" id="mapbox"><div class="map'+(editMode?' editing':'')+(TV()?' tv':'')+'" id="map"><div class="board">黑板</div><div class="piano">鋼琴</div>'+treeHTML(c);
   LAYOUT.forEach(G=>{
@@ -1178,6 +1178,12 @@ function cancelLastLesson(c){
       if(r){b.lastStreak=r.ls;b.cleanFails=r.cf;if(b.sick&&!r.sick){b.sick=false;delete b.sickWhy;}}
       else if(mx>mn&&(gs[g]||0)===mn&&b.lastStreak>0)b.lastStreak--;});
     c.lessons.pop();c.graceUndo=[];save();closeModal();renderAll();toast('🗑️ 已取消這節課的紀錄，星星和蘋果都還原了');},true);
+}
+function markTap(no){
+  const c=cur();if(!c)return;
+  if(!c.session&&graceLesson(c)&&S.settings.graceConfirm!==false){const s=c.students.find(x=>x.no===no);if(!s){mark(no);return;}
+    modal('<div style="font-size:50px">🕒</div><h2>已經下課了</h2><div style="font-size:22px">要幫 <b>'+no+' 號 '+esc(s.name)+'</b> 補記一次提醒嗎？</div><div class="small" style="margin-top:6px">（同學在照顧守護獸時不小心點到座位，按「按錯了」就好）</div><div class="acts"><button class="btn pri" data-act="x" style="font-size:20px">按錯了，不要記</button><button class="btn danger" data-act="ok">補記一次</button></div>','',{ok:()=>mark(no)},8000);return;}
+  mark(no);
 }
 function graceMin(){return S.settings.graceMin==null?15:S.settings.graceMin;}
 function graceLesson(c){const L=c&&!c.session&&c.lessons&&c.lessons[c.lessons.length-1];return L&&L.end&&Date.now()-L.end<graceMin()*60000?L:null;}
@@ -2587,7 +2593,7 @@ function renderSettings(){
     num('recoverMin','連續沒被記多久回復一格（0＝不回復）',0,40,'分鐘')+
     num('interval','多久結算一次小組星星與全班能量',1,20,'分鐘')+
     num('graceMin','按下課後，還可以補記秩序幾分鐘（0＝不能補記）',0,60,'分鐘')+num('lessonApples','每節課一開始，樹上有幾顆蘋果',1,20,'顆')+chk('dropFruit','有人超過提醒次數時，也自動掉一顆蘋果')+
-    chk('photoOnLimit','超過次數時在大螢幕顯示照片')+chk('warnSfx','提醒和扣分時播放音效')+
+    chk('photoOnLimit','超過次數時在大螢幕顯示照片')+chk('graceConfirm','下課後點座位補記，要先確認（避免學生不小心點到）')+chk('warnSfx','提醒和扣分時播放音效')+
     chk('star','下課時顯示「今日安靜之星」')+chk('drawPhoto','抽籤結果顯示學生照片')+
     txt('limitMsg','照片下方的文字')+
     '</div><div class="small" style="margin-top:12px">以一堂 40 分鐘、每 5 分鐘結算一次來算，果子目標和長果子門檻是每個班分開設定的，請看下面的「各班果樹設定」。</div></div>'+
@@ -2725,7 +2731,7 @@ $('#view-class').addEventListener('click',e=>{
     else{if(nb!=null)c.seats[a]=nb;else delete c.seats[a];if(na!=null)c.seats[b]=na;else delete c.seats[b];}
     syncGroups(c);save();renderClass();return;
   }
-  if(seat&&seat.dataset.no)mark(+seat.dataset.no);else if(u)mark(+u.dataset.u);
+  if(seat&&seat.dataset.no)markTap(+seat.dataset.no);else if(u)markTap(+u.dataset.u);
 });
 
 let buf='',bufT;
