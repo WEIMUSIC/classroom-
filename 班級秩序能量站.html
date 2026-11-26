@@ -515,6 +515,21 @@ body.present .cv{display:block}
 .spbub{position:relative;flex:1;background:#fffbeb;border:4px solid #f59e0b;border-radius:24px;padding:20px 24px;font-size:26px;font-weight:700;line-height:1.6;color:#1f2a44;min-height:220px;white-space:pre-wrap}
 .spbub::before{content:'';position:absolute;left:-22px;top:60px;border:12px solid transparent;border-right:20px solid #f59e0b}
 .dgo.hidden,#spSkip.hidden{display:none}
+.rbs{position:relative;height:300px;overflow:hidden;border-radius:18px;background:linear-gradient(180deg,#1e3a8a 0%,#60a5fa 55%,#fde68a 100%);margin:-6px -6px 10px}
+.rbsky{position:absolute;inset:0}
+.rbst{position:absolute;font-size:34px;opacity:0;animation:twk 1.6s ease-in-out infinite}
+.rbst.s1{left:12%;top:14%;animation-delay:.2s}.rbst.s2{left:78%;top:10%;animation-delay:.7s}.rbst.s3{left:30%;top:36%;animation-delay:1.1s}.rbst.s4{left:66%;top:30%;animation-delay:1.5s}
+@keyframes twk{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.2)}}
+.rbold{position:absolute;left:50%;bottom:20px;width:190px;height:190px;margin-left:-95px;animation:rbup 3s cubic-bezier(.5,0,.8,.4) .6s forwards;filter:drop-shadow(0 0 24px #fde047)}
+.rbold img,.rbegg img{width:100%;height:100%;object-fit:contain}
+@keyframes rbup{0%{transform:translateY(0) scale(1);opacity:1}15%{transform:translateY(10px) scale(1.05)}100%{transform:translateY(-420px) scale(.35);opacity:0}}
+.rbegg{position:absolute;left:50%;bottom:20px;width:130px;height:130px;margin-left:-65px;opacity:0;animation:rbegg 1.4s cubic-bezier(.3,1.5,.5,1) 3.2s forwards;filter:drop-shadow(0 0 18px #fff)}
+@keyframes rbegg{0%{opacity:0;transform:translateY(-320px) rotate(-30deg)}60%{opacity:1;transform:translateY(0) rotate(8deg)}80%{transform:translateY(-14px) rotate(-4deg)}100%{opacity:1;transform:translateY(0) rotate(0)}}
+.rbt1{opacity:0;animation:rbfade .6s 1.2s forwards}
+.rbt2{font-size:20px;opacity:0;animation:rbfade .6s 3.8s forwards}
+.rbacts{opacity:0;pointer-events:none;animation:rbact .4s 4.6s forwards}
+@keyframes rbact{to{opacity:1;pointer-events:auto}}
+@keyframes rbfade{to{opacity:1}}
 .fly{position:relative;height:200px;display:flex;align-items:flex-end;justify-content:center;font-size:110px;line-height:1}
 .fly .fu{position:absolute;animation:flyup 2.2s ease-in forwards;filter:drop-shadow(0 0 20px #fde047)}
 .fly .fe{animation:evin 1s cubic-bezier(.3,1.6,.5,1) 1.6s backwards}
@@ -933,6 +948,7 @@ function closeModal(){if(typeof stopAlarm==='function')stopAlarm();$('#overlay')
 $('#overlay').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');
   if(b){const f=modalActs[b.dataset.act];closeModal();if(f)f();return;}
+  if(e.target.id==='overlay'&&document.querySelector('#overlay .modal.rbm'))return;
   if(e.target.id==='overlay'||e.target.closest('.modal.limit')||(e.target.closest('.modal.stars')&&!e.target.closest('.modal.stars .acts')&&!S.settings.cleanOff&&false))closeModal();
 });
 function confirmBox(title,text,okLabel,fn,danger){
@@ -1499,11 +1515,21 @@ function beastsHTML(c){
   return h;
 }
 function stageDots(b){return '<div class="sdots">'+STAGE.map((n,i)=>'<span class="'+(i<=b.stage?'on':'')+'" title="'+n+'">'+(i<=b.stage?BEASTS[b.type].st[i]:'·')+'</span>').join('<i>›</i>')+'</div>';}
+function showReborn(c,g,from){
+  const b=guard(c,g),F=BEASTS[from]||BEASTS[b.type],egg=BEASTS[b.type].st[0];ensureAudio();
+  modal('<div class="rbs"><div class="rbsky"><span class="rbst s1">✨</span><span class="rbst s2">⭐</span><span class="rbst s3">✨</span><span class="rbst s4">🌟</span></div>'+
+    '<div class="rbold">'+F.st[4]+'</div><div class="rbegg">'+egg+'</div></div>'+
+    '<h2 class="rbt1">'+esc(F.name)+'神獸飛回天上了 ✨</h2><div class="rbt2">謝謝第 '+g+' 組的照顧！<br>天上掉下來一顆<b>新的神秘蛋</b> 🥚，大家一起把牠養大吧！</div>'+
+    '<div class="acts rbacts"><button class="btn" data-act="again">🔁 再看一次</button><button class="btn pri" data-act="x" style="font-size:20px">好！</button></div>','rbm',{again:()=>showReborn(c,g,from)});
+  [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'triangle',0.2),300+i*160));
+  setTimeout(()=>{tone(392,0.15,'sine',0.25);setTimeout(()=>tone(523,0.3,'sine',0.25),150);},3300);
+  setTimeout(()=>fanfare(),4200);
+}
 function guardCardHTML(c,g,inModal){
   const b=guard(c,g),G=LAYOUT[g-1],st=c.groupPts[g]||0,B=BEASTS[b.type],cost=b.stage<4?evoCost(c)[b.stage]:0;
   let act='';
   if(b.sick)act='<div class="sickbox">🤒 守護獸生病了（'+(b.sickWhy||'連續 '+sickN()+' 次最後一名')+'）。治好之前不能進化'+(b.stage===4?'，也不能開盲盒':'')+'。</div><button class="btn'+(st>=healCost(c)?' pri':'')+'" data-gd="heal" data-g="'+g+'"'+(st<healCost(c)?' disabled':'')+'>💊 用 ⭐'+healCost(c)+' 治療</button>'+(st<healCost(c)?'<span class="small">還差 ⭐'+(healCost(c)-st)+'</span>':'');
-  else if(b.stage<4)act='<button class="btn'+(st>=cost?' pri':'')+'" data-gd="evo" data-g="'+g+'"'+(st<cost?' disabled':'')+'>⬆ 進化成「'+STAGE[b.stage+1]+'」（⭐'+cost+'）</button>'+(st<cost?'<span class="small">還差 ⭐'+(cost-st)+'</span>':'');
+  else if(b.stage<4)act='<button class="btn'+(st>=cost?' pri':'')+'" data-gd="evo" data-g="'+g+'"'+(st<cost?' disabled':'')+'>⬆ 進化成「'+STAGE[b.stage+1]+'」（⭐'+cost+'）</button>'+(st<cost?'<span class="small">還差 ⭐'+(cost-st)+'</span>':'')+(b.stage===0&&b.lastRb&&Date.now()-b.lastRb.t<14*864e5?'<button class="btn" data-gd="rbshow" data-g="'+g+'">🎬 再看一次「神獸回天上」</button>':'');
   else{const mem=c.students.filter(s=>s.group===g),op=Object.keys(b.boxes||{}).length;
     act='<button class="btn pri" data-gd="box" data-g="'+g+'">🎁 組員開盲盒（'+op+'/'+mem.length+'）</button>'+(!inModal&&boxPrizes().some(x=>x.elig)?'<details class="small" style="width:100%"><summary>👀 大獎資格（老師查看用）</summary>'+mem.map(s=>s.no+'號'+(eligible(c,g,s.no)?'✅':'✖（被記'+marksSince(c,s.no,cycleStart(b))+'次）')).join('、')+'</details>':'')+(op>=mem.length&&mem.length?'<button class="btn" data-gd="reborn" data-g="'+g+'">🌟 送神獸回天上，換新蛋</button>':'');}
   return '<div class="gcard2" style="border-color:'+G.fl+'"><div class="gch" style="background:'+G.circ+'">第 '+g+' 組　⭐ '+st+(b.done?'　<span title="已培育的神獸數">🏆×'+b.done+'</span>':'')+'</div>'+
@@ -1553,7 +1579,8 @@ function guardAction(a,g,el){
   else if(a==='box'){closeModal();openBox(g);}
   else if(a==='heal'){closeModal();const b=guard(c,g);if((c.groupPts[g]||0)<healCost(c)){toast('⭐ 不夠');return;}c.groupPts[g]-=healCost(c);b.sick=false;b.lastStreak=0;b.cleanFails=0;delete b.sickWhy;save();renderView();ensureAudio();fanfare();
     modal('<div class="heal"><span>💊</span><span class="hb">'+beastIcon(b)+'</span></div><h2>第 '+g+' 組的'+BEASTS[b.type].name+'康復了！</h2><div style="font-size:20px">謝謝大家用星星照顧牠，之後要一起加油，別再最後一名囉 💪</div><div class="acts"><button class="btn pri" data-act="x">太好了！</button></div>','party',{});}
-  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆新的神秘蛋，重新開始培育。已培育神獸數 +1。','送回天上',()=>{const old=beastIcon(b),nm=BEASTS[b.type].name;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();delete b.speechIdx;save();renderView();ensureAudio();fanfare();modal('<div class="fly"><span class="fu">'+old+'</span><span class="fe">🥚</span></div><h2>'+nm+'神獸回到天上了 ✨</h2><div style="font-size:20px">第 '+g+' 組得到了一顆新的神秘蛋，一起把牠養大吧！</div><div class="acts"><button class="btn pri" data-act="x">好！</button></div>','party',{});});}
+  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆新的神秘蛋，重新開始培育。已培育神獸數 +1。','送回天上',()=>{const from=b.type;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();b.lastRb={from:from,t:Date.now()};delete b.speechIdx;save();renderView();showReborn(c,g,from);});}
+  else if(a==='rbshow'){closeModal();const b=guard(c,g);if(b.lastRb)showReborn(c,g,b.lastRb.from);}
 }
 $('#overlay').addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(!b)return;e.stopPropagation();guardAction(b.dataset.gd,+b.dataset.g,b);},true);
 function guardClick(e){
