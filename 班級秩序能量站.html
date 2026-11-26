@@ -486,6 +486,29 @@ body.present .cv{display:block}
 .bx{position:relative}
 .bx.gold{border-color:#f59e0b;box-shadow:0 0 0 3px #fde68a}
 .bxg{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#f59e0b,#fbbf24);color:#fff;font-weight:900;font-size:13px;border-radius:10px;padding:1px 8px;white-space:nowrap;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.wallc{width:min(1180px,100%)}
+.wwho{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 18px 8px;font-size:18px}
+.wch{border:3px solid #e2e8f0;background:#fff;border-radius:20px;padding:5px 14px;font-weight:800;font-size:18px;cursor:pointer;font-family:inherit;color:#1f2a44;transition:all .08s}
+.wch.on{background:#f59e0b;border-color:#b45309;color:#fff;transform:scale(1.12);box-shadow:0 4px 12px rgba(245,158,11,.5)}
+.wch.away{opacity:.55}
+.wch.done{background:#f1f5f9;color:#94a3b8;border-style:dashed;cursor:default}
+.wturn{margin:0 18px;background:linear-gradient(90deg,#fef3c7,#fde68a);border-radius:16px;padding:10px 16px;font-size:26px;font-weight:900;color:#92400e;text-align:center}
+.wturn.nudge{animation:shake .12s 4}
+.wel{background:#f59e0b;color:#fff;border-radius:10px;padding:1px 10px;font-size:16px;vertical-align:middle}
+.wall{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;padding:12px 18px;background:repeating-linear-gradient(0deg,#fff7ed 0 140px,#fde7c7 140px 150px);margin:10px 18px;border-radius:16px}
+.wg{position:relative;height:138px;border:0;background:transparent;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding:0 0 10px;font-family:inherit;border-radius:14px}
+.wg:not(.ready):not(.open){filter:saturate(.75)}
+.wg.ready:hover .gft{animation:shake .12s infinite}
+.wg.shaking .gft{animation:shake .12s infinite}
+.wgk{position:absolute;left:6px;top:4px;font-size:13px;font-weight:900;color:#b45309;opacity:.6}
+.gft{position:relative;display:block;width:84px;height:92px}
+.gbody{position:absolute;left:6px;right:6px;bottom:0;height:62px;background:linear-gradient(90deg,transparent 40%,var(--gr) 40%,var(--gr) 60%,transparent 60%),var(--gb);border-radius:6px;box-shadow:inset 0 -8px 0 rgba(0,0,0,.12),0 4px 6px rgba(0,0,0,.15)}
+.glid{position:absolute;left:0;right:0;bottom:58px;height:22px;background:linear-gradient(90deg,transparent 38%,var(--gr) 38%,var(--gr) 62%,transparent 62%),var(--gb);border-radius:6px;filter:brightness(1.1);box-shadow:0 3px 0 rgba(0,0,0,.15);z-index:1}
+.gbow{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);font-size:38px;line-height:1;z-index:2}
+.wg.open{cursor:default;background:#fff;border:4px solid var(--rc);flex-direction:column;align-items:center;justify-content:center;padding:4px;gap:1px}
+.wg.open .bxr{background:var(--rc);color:#fff;font-weight:900;border-radius:10px;padding:0 10px;font-size:13px}
+.wgi{font-size:44px;line-height:1.1}.wgp{font-size:15px;font-weight:900;color:var(--rc);line-height:1.2;text-align:center}.wgn{font-size:13px;color:#64748b;font-weight:700}
+.wg.pop{animation:pop .5s}.wg.ssr{box-shadow:0 0 0 6px #fde047,0 0 30px #f59e0b}
 .bxrule{margin-top:4px;font-size:15px;color:#92400e;background:#fef3c7;border-radius:8px;padding:3px 8px;display:inline-block}
 .speech{display:flex;align-items:center;gap:20px;padding:24px 28px}
 .spbeast{font-size:150px;line-height:1;flex:none;filter:drop-shadow(0 0 22px #fde047);animation:pethop 1.2s ease-in-out infinite alternate}
@@ -764,6 +787,7 @@ tr.scrow:hover td{background:#f8fafc}
 .bzn{display:flex;gap:8px;justify-content:center;margin:6px 0}
 .bzn button{border:3px solid #f59e0b;background:#fffbeb;border-radius:14px;padding:8px 18px;font-size:22px;font-weight:900;color:#92400e;cursor:pointer;font-family:inherit}
 .bzn button.on{background:#f59e0b;color:#fff}
+@media (max-width:1100px){.wall{grid-template-columns:repeat(5,1fr)}}
 @media (max-width:1400px){
   .noteside{width:180px}.dateside{width:104px}
   .cv{gap:8px}
@@ -1529,7 +1553,7 @@ function guardAction(a,g,el){
   else if(a==='box'){closeModal();openBox(g);}
   else if(a==='heal'){closeModal();const b=guard(c,g);if((c.groupPts[g]||0)<healCost(c)){toast('⭐ 不夠');return;}c.groupPts[g]-=healCost(c);b.sick=false;b.lastStreak=0;b.cleanFails=0;delete b.sickWhy;save();renderView();ensureAudio();fanfare();
     modal('<div class="heal"><span>💊</span><span class="hb">'+beastIcon(b)+'</span></div><h2>第 '+g+' 組的'+BEASTS[b.type].name+'康復了！</h2><div style="font-size:20px">謝謝大家用星星照顧牠，之後要一起加油，別再最後一名囉 💪</div><div class="acts"><button class="btn pri" data-act="x">太好了！</button></div>','party',{});}
-  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆新的神秘蛋，重新開始培育。已培育神獸數 +1。','送回天上',()=>{const old=beastIcon(b),nm=BEASTS[b.type].name;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.start=Date.now();delete b.speechIdx;save();renderView();ensureAudio();fanfare();modal('<div class="fly"><span class="fu">'+old+'</span><span class="fe">🥚</span></div><h2>'+nm+'神獸回到天上了 ✨</h2><div style="font-size:20px">第 '+g+' 組得到了一顆新的神秘蛋，一起把牠養大吧！</div><div class="acts"><button class="btn pri" data-act="x">好！</button></div>','party',{});});}
+  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆新的神秘蛋，重新開始培育。已培育神獸數 +1。','送回天上',()=>{const old=beastIcon(b),nm=BEASTS[b.type].name;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();delete b.speechIdx;save();renderView();ensureAudio();fanfare();modal('<div class="fly"><span class="fu">'+old+'</span><span class="fe">🥚</span></div><h2>'+nm+'神獸回到天上了 ✨</h2><div style="font-size:20px">第 '+g+' 組得到了一顆新的神秘蛋，一起把牠養大吧！</div><div class="acts"><button class="btn pri" data-act="x">好！</button></div>','party',{});});}
 }
 $('#overlay').addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(!b)return;e.stopPropagation();guardAction(b.dataset.gd,+b.dataset.g,b);},true);
 function guardClick(e){
@@ -1574,8 +1598,8 @@ function beastSpeech(c,g){
   const t=custom||DEF_SPEECH[b.speechIdx%DEF_SPEECH.length];
   return t.replace(/\{組\}/g,g).replace(/\{名單\}/g,mem).replace(/\{守護獸\}/g,BEASTS[b.type].name);
 }
-function openBox(g){const c=cur();if(!c)return;const b=guard(c,g);if(b.stage<4){toast('還沒變成神獸喔');return;}if(b.sick){toast('神獸生病了，先治好才能開盲盒');return;}boxG=g;boxMode=Object.keys(b.boxes||{}).length?'grid':'speech';$('#box').classList.remove('hidden');renderBox(true);}
-function closeBox(){clearInterval(twT);$('#box').classList.add('hidden');renderView();}
+function openBox(g){const c=cur();if(!c)return;const b=guard(c,g);if(b.stage<4){toast('還沒變成神獸喔');return;}if(b.sick){toast('神獸生病了，先治好才能開盲盒');return;}boxG=g;boxSel=null;;boxMode=Object.keys(b.boxes||{}).length?'grid':'speech';$('#box').classList.remove('hidden');renderBox(true);}
+function closeBox(){clearInterval(twT);if(boxSpin){clearInterval(boxSpin);boxSpin=null;}$('#box').classList.add('hidden');renderView();}
 function renderSpeech(first){
   const c=cur(),g=boxG,b=guard(c,g),B=BEASTS[b.type],txt=beastSpeech(c,g);
   $('#box').innerHTML='<div class="dcard'+(first?'':' noanim')+'"><div class="dhead" style="background:linear-gradient(90deg,'+B.col+',#f59e0b)"><b>🌟 第 '+g+' 組的'+B.name+'神獸有話要說</b><button class="dx" data-bxa="close">✕</button></div>'+
@@ -1585,17 +1609,29 @@ function renderSpeech(first){
   twT=setInterval(()=>{if(!$('#spText')){clearInterval(twT);return;}i++;el.textContent=txt.slice(0,i);if(i%3===0)tone(700+Math.random()*200,0.03,'sine',0.06);
     if(i>=txt.length){clearInterval(twT);$('#spSkip').classList.add('hidden');$('#spGo').classList.remove('hidden');}},70);
 }
+const WALL_N=20,GIFT_COL=[['#ef4444','#fde047'],['#3b82f6','#f8fafc'],['#22c55e','#fef08a'],['#a855f7','#fde68a'],['#f97316','#fff7ed'],['#ec4899','#fdf2f8'],['#14b8a6','#fde047'],['#eab308','#dc2626'],['#6366f1','#fbcfe8'],['#0ea5e9','#fef3c7']];
+let boxSel=null,boxSpin=null;
+function giftHTML(i){const k=GIFT_COL[(i*7)%GIFT_COL.length],rot=((i*37)%9)-4,sc=0.9+((i*13)%5)*0.04;
+  return '<span class="gft" style="--gb:'+k[0]+';--gr:'+k[1]+';transform:rotate('+rot+'deg) scale('+sc+')"><span class="gbow">🎀</span><span class="glid"></span><span class="gbody"></span></span>';}
 function renderBox(first){
   if(boxMode==='speech'){renderSpeech(first);return;}
-  const c=cur(),g=boxG,b=guard(c,g),G=LAYOUT[g-1],B=BEASTS[b.type],mem=c.students.filter(s=>s.group===g).sort((x,y)=>x.no-y.no),ab=absentSet(c);
-  const op=Object.keys(b.boxes).length;
-  let h='<div class="dcard'+(first?'':' noanim')+'"><div class="dhead" style="background:linear-gradient(90deg,'+B.col+',#f59e0b)"><b>🎁 第 '+g+' 組・'+B.name+'神獸的祝福盲盒</b><button class="dx" data-bxa="close">✕</button></div>'+
-    '<div class="bxtop"><span class="bxbeast">'+beastIcon(b)+'</span><div>點自己的盲盒打開！已開 <b>'+op+'</b> / '+mem.length+'<div class="small">請假的同學可以先保留，回來再開。</div>'+
-    (boxPrizes().some(x=>x.elig)?'<div class="bxrule">✨ 有金色標記的盲盒，有機會抽到大獎 '+boxPrizes().filter(x=>x.elig).map(x=>x.icon+esc(x.name)).join('、')+'（這輪表現好的同學才有資格）</div>':'')+'</div></div><div class="bxgrid">';
-  mem.forEach(s=>{const r=b.boxes[s.no];
-    if(r)h+='<div class="bx open" style="--rc:'+RAR[r.r||'N'].col+'"><div class="bxr">'+RAR[r.r||'N'].name+'</div><div class="bxi">'+esc(r.icon)+'</div><div class="bxp">'+esc(r.prize)+'</div><div class="bxn">'+s.no+' '+esc(s.name)+'</div></div>';
-    else h+='<button class="bx'+(ab.has(s.no)?' away':'')+(boxPrizes().some(x=>x.elig)&&eligible(c,g,s.no)?' gold':'')+'" data-bxa="open" data-no="'+s.no+'" style="--gc:'+G.fl+'">'+(boxPrizes().some(x=>x.elig)&&eligible(c,g,s.no)?'<div class="bxg">✨ 大獎資格</div>':'')+'<div class="bxi">🎁</div><div class="bxn">'+s.no+' '+esc(s.name)+'</div>'+(ab.has(s.no)?'<div class="small">（今天不在）</div>':'')+'</button>';});
-  h+='</div><div class="drow center"><button class="btn" data-bxa="again">💬 再聽一次神獸的話</button>'+(op?'<button class="btn" data-bxa="cards">🖨️ 列印這組的兌換卡</button>':'')+(op>=mem.length&&mem.length?'<button class="btn pri" data-bxa="reborn">🌟 全部開完了！送神獸回天上，換新蛋</button>':'')+'</div></div>';
+  const c=cur(),g=boxG,b=guard(c,g),B=BEASTS[b.type],mem=c.students.filter(s=>s.group===g).sort((x,y)=>x.no-y.no),ab=absentSet(c);
+  b.wall=b.wall||{};const op=Object.keys(b.boxes).length,N=Math.max(WALL_N,mem.length),hasElig=boxPrizes().some(x=>x.elig);
+  if(boxSel!=null&&(b.boxes[boxSel]||!mem.some(s=>s.no===boxSel)))boxSel=null;
+  const selS=boxSel!=null?mem.find(s=>s.no===boxSel):null;
+  let h='<div class="dcard wallc'+(first?'':' noanim')+'"><div class="dhead" style="background:linear-gradient(90deg,'+B.col+',#f59e0b)"><b>🎁 第 '+g+' 組・'+B.name+'神獸留下的禮物</b><button class="dx" data-bxa="close">✕</button></div>'+
+    '<div class="bxtop"><span class="bxbeast">'+beastIcon(b)+'</span><div style="flex:1">已選 <b>'+op+'</b> / '+mem.length+' 人　<span class="small">禮物裡面是什麼，要打開才知道！</span>'+
+    (hasElig?'<div class="bxrule">✨ 名字旁有 ✨ 的同學，有機會抽到大獎 '+boxPrizes().filter(x=>x.elig).map(x=>x.icon+esc(x.name)).join('、')+'</div>':'')+'</div></div>';
+  h+='<div class="wwho"><b>輪到誰：</b>'+mem.map(s=>{const r=b.boxes[s.no];
+      if(r)return '<span class="wch done" title="'+esc(r.prize)+'">'+s.no+' '+esc(s.name)+' '+esc(r.icon)+'</span>';
+      return '<button class="wch'+(boxSel===s.no?' on':'')+(ab.has(s.no)?' away':'')+'" data-bxa="pick" data-no="'+s.no+'">'+s.no+' '+esc(s.name)+(hasElig&&eligible(c,g,s.no)?' ✨':'')+(ab.has(s.no)?'（不在）':'')+'</button>';}).join('')+
+    (op<mem.length?'<button class="btn sm pri" data-bxa="rand">🎲 隨機指名</button>':'')+'</div>';
+  h+='<div class="wturn">'+(selS?'👉 輪到 <b>'+selS.no+' 號 '+esc(selS.name)+'</b>！選一個你喜歡的禮物'+(hasElig&&eligible(c,g,selS.no)?' <span class="wel">✨ 大獎資格</span>':''):(op>=mem.length&&mem.length?'🎉 大家都選好禮物了！':'請老師點名字，或按「🎲 隨機指名」'))+'</div>';
+  h+='<div class="wall">';
+  for(let i=0;i<N;i++){const no=b.wall[i],r=no!=null?b.boxes[no]:null;
+    if(r){const s=c.students.find(x=>x.no===+no);h+='<div class="wg open" data-slot="'+i+'" style="--rc:'+RAR[r.r||'N'].col+'"><div class="bxr">'+RAR[r.r||'N'].name+'</div><div class="wgi">'+esc(r.icon)+'</div><div class="wgp">'+esc(r.prize)+'</div><div class="wgn">'+no+' '+esc(s?s.name:'')+'</div></div>';}
+    else h+='<button class="wg'+(selS?' ready':'')+'" data-bxa="open" data-slot="'+i+'">'+giftHTML(i)+'<span class="wgk">'+(i+1)+'</span></button>';}
+  h+='</div><div class="drow center"><button class="btn" data-bxa="again">💬 再聽一次神獸的話</button>'+(op?'<button class="btn" data-bxa="cards">🖨️ 列印這組的兌換卡</button>':'')+(op>=mem.length&&mem.length?'<button class="btn pri" data-bxa="reborn">🌟 全部選完了！送神獸回天上，換新蛋</button>':'')+'</div></div>';
   $('#box').innerHTML=h;
 }
 $('#box').addEventListener('click',e=>{
@@ -1607,13 +1643,21 @@ $('#box').addEventListener('click',e=>{
   else if(a==='skip'){clearInterval(twT);$('#spText').textContent=beastSpeech(c,boxG);b.classList.add('hidden');$('#spGo').classList.remove('hidden');}
   else if(a==='toBox'){clearInterval(twT);boxMode='grid';renderBox(false);}
   else if(a==='again'){boxMode='speech';renderBox(false);}
+  else if(a==='pick'){if(boxSpin)return;boxSel=+b.dataset.no;ensureAudio();tone(784,0.12,'sine',0.2);renderBox(false);}
+  else if(a==='rand'){if(boxSpin)return;const gd=guard(c,boxG),ab=absentSet(c),mem=c.students.filter(s=>s.group===boxG&&!gd.boxes[s.no]);let pool=mem.filter(s=>!ab.has(s.no));if(!pool.length)pool=mem;if(!pool.length)return;
+    ensureAudio();const fin=pool[Math.floor(Math.random()*pool.length)].no;let n=0;const steps=14+Math.floor(Math.random()*4);
+    boxSpin=setInterval(()=>{const btns=[...document.querySelectorAll('#box .wch[data-no]')].filter(x=>pool.some(s=>s.no===+x.dataset.no));btns.forEach(x=>x.classList.remove('on'));
+      n++;const cand=n>=steps?btns.find(x=>+x.dataset.no===fin):btns[n%btns.length];if(cand)cand.classList.add('on');tone(600+(n%5)*80,0.05,'square',0.1);
+      if(n>=steps){clearInterval(boxSpin);boxSpin=null;boxSel=fin;setTimeout(()=>{fanfare();renderBox(false);},250);}},90);}
   else if(a==='open'){
-    if(b.classList.contains('shaking'))return;const no=+b.dataset.no,s=c.students.find(x=>x.no===no);ensureAudio();
+    if(boxSpin||b.classList.contains('shaking')||document.querySelector('#box .wg.shaking'))return;
+    if(boxSel==null){toast('先點名字，或按「🎲 隨機指名」');const w=document.querySelector('#box .wturn');if(w){w.classList.remove('nudge');void w.offsetWidth;w.classList.add('nudge');}return;}
+    const no=boxSel,slot=+b.dataset.slot,s=c.students.find(x=>x.no===no);ensureAudio();
     b.classList.add('shaking');let n=0;const tk=setInterval(()=>{tone(500+n*60,0.06,'square',0.12);n++;},110);
-    setTimeout(()=>{clearInterval(tk);const x=pickPrize(c,boxG,no),gd=guard(c,boxG);gd.boxes[no]={icon:x.icon,prize:x.name,r:x.r};
-      c.boxLog=c.boxLog||[];c.boxLog.push({id:uid(),t:Date.now(),g:boxG,bt:gd.type,no:no,name:s?s.name:'',icon:x.icon,prize:x.name,r:x.r,given:false});save();
+    setTimeout(()=>{clearInterval(tk);const gd=guard(c,boxG);if(gd.boxes[no]){renderBox(false);return;}const x=pickPrize(c,boxG,no);gd.boxes[no]={icon:x.icon,prize:x.name,r:x.r,slot:slot};gd.wall=gd.wall||{};gd.wall[slot]=no;
+      c.boxLog=c.boxLog||[];c.boxLog.push({id:uid(),t:Date.now(),g:boxG,bt:gd.type,no:no,name:s?s.name:'',icon:x.icon,prize:x.name,r:x.r,given:false});boxSel=null;save();
       if(x.r==='SSR'||x.r==='SR')fanfare();else tone(880,0.3,'triangle',0.25);renderBox(false);
-      const el=[...document.querySelectorAll('#box .bx.open')].find(d=>d.querySelector('.bxn').textContent.startsWith(no+' '));if(el){el.classList.add('pop');if(x.r==='SSR')el.classList.add('ssr');}},1200);
+      const el=document.querySelector('#box .wg.open[data-slot="'+slot+'"]');if(el){el.classList.add('pop');if(x.r==='SSR')el.classList.add('ssr');}},1200);
   }
 });
 
