@@ -1519,7 +1519,7 @@ function showReborn(c,g,from){
   const b=guard(c,g),F=BEASTS[from]||BEASTS[b.type],egg=BEASTS[b.type].st[0];ensureAudio();
   modal('<div class="rbs"><div class="rbsky"><span class="rbst s1">✨</span><span class="rbst s2">⭐</span><span class="rbst s3">✨</span><span class="rbst s4">🌟</span></div>'+
     '<div class="rbold">'+F.st[4]+'</div><div class="rbegg">'+egg+'</div></div>'+
-    '<h2 class="rbt1">'+esc(F.name)+'神獸飛回天上了 ✨</h2><div class="rbt2">謝謝第 '+g+' 組的照顧！<br>天上掉下來一顆<b>新的神秘蛋</b> 🥚，大家一起把牠養大吧！</div>'+
+    '<h2 class="rbt1">'+esc(F.name)+'神獸飛回天上了 ✨</h2><div class="rbt2">謝謝第 '+g+' 組的照顧！<br>天上掉下來一顆<b>驚喜蛋</b> 🥚，孵出來才知道是哪一隻神獸，大家一起把牠養大吧！</div>'+
     '<div class="acts rbacts"><button class="btn" data-act="again">🔁 再看一次</button><button class="btn pri" data-act="x" style="font-size:20px">好！</button></div>','rbm',{again:()=>showReborn(c,g,from)});
   [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'triangle',0.2),300+i*160));
   setTimeout(()=>{tone(392,0.15,'sine',0.25);setTimeout(()=>tone(523,0.3,'sine',0.25),150);},3300);
@@ -1562,7 +1562,7 @@ function guardPanelHTML(c){
 }
 function evolve(c,g){
   const b=guard(c,g);if(b.sick){toast('守護獸生病了，先治好才能進化');return;}if(b.stage>=4)return;const cost=evoCost(c)[b.stage];if((c.groupPts[g]||0)<cost){toast('第 '+g+' 組的 ⭐ 還不夠');return;}
-  const old=beastIcon(b);let surprise=false;if(b.type==='random'){const ks=Object.keys(BEASTS).filter(k=>k!=='random');b.type=ks[Math.floor(Math.random()*ks.length)];surprise=true;}
+  const old=beastIcon(b);let surprise=false;if(b.type==='random'){const all=Object.keys(BEASTS).filter(k=>k!=='random'),prev=b.lastRb&&b.lastRb.from,others=Object.keys(c.guard||{}).filter(k=>+k!==g).map(k=>c.guard[k].type);let ks=all.filter(k=>k!==prev&&!others.includes(k));if(!ks.length)ks=all.filter(k=>k!==prev);if(!ks.length)ks=all;b.type=ks[Math.floor(Math.random()*ks.length)];surprise=true;}
   c.groupPts[g]-=cost;b.stage++;save();renderView();ensureAudio();fanfare();
   const B=BEASTS[b.type],fin=b.stage===4;
   modal('<div class="evo"><span class="eo">'+old+'</span><span class="ea">✨</span><span class="en'+(fin?' fin':'')+'" style="--bc:'+B.col+'">'+beastIcon(b)+'</span></div>'+(surprise?'<h2 style="font-size:34px">🎲 驚喜蛋孵化了！原來是「'+B.name+'」！</h2>':'<h2 style="font-size:34px">第 '+g+' 組的'+B.name+'進化了！</h2>')+'<div style="font-size:24px;font-weight:800">'+STAGE[b.stage-1]+' ➜ '+STAGE[b.stage]+'</div>'+
@@ -1579,7 +1579,7 @@ function guardAction(a,g,el){
   else if(a==='box'){closeModal();openBox(g);}
   else if(a==='heal'){closeModal();const b=guard(c,g);if((c.groupPts[g]||0)<healCost(c)){toast('⭐ 不夠');return;}c.groupPts[g]-=healCost(c);b.sick=false;b.lastStreak=0;b.cleanFails=0;delete b.sickWhy;save();renderView();ensureAudio();fanfare();
     modal('<div class="heal"><span>💊</span><span class="hb">'+beastIcon(b)+'</span></div><h2>第 '+g+' 組的'+BEASTS[b.type].name+'康復了！</h2><div style="font-size:20px">謝謝大家用星星照顧牠，之後要一起加油，別再最後一名囉 💪</div><div class="acts"><button class="btn pri" data-act="x">太好了！</button></div>','party',{});}
-  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆新的神秘蛋，重新開始培育。已培育神獸數 +1。','送回天上',()=>{const from=b.type;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();b.lastRb={from:from,t:Date.now()};delete b.speechIdx;save();renderView();showReborn(c,g,from);});}
+  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆驚喜蛋（孵出來才知道是哪一隻神獸），重新開始培育。已培育神獸數 +1。','送回天上',()=>{const from=b.type;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();b.lastRb={from:from,t:Date.now()};b.type='random';delete b.speechIdx;save();renderView();showReborn(c,g,from);});}
   else if(a==='rbshow'){closeModal();const b=guard(c,g);if(b.lastRb)showReborn(c,g,b.lastRb.from);}
 }
 $('#overlay').addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(!b)return;e.stopPropagation();guardAction(b.dataset.gd,+b.dataset.g,b);},true);
