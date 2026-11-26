@@ -1532,20 +1532,20 @@ function beastsHTML(c){
     const walk=b.stage>=1&&!b.sick&&!editMode,key=c.id+'_'+g;let x=G.cx+o[0],y=G.cy+o[1];
     if(walk){const q=beastPos[key];if(q&&q.st===b.stage){x=q.x;y=q.y;}else beastPos[key]={x:x,y:y,st:b.stage,f:false};}
     const fl=walk&&beastPos[key]&&beastPos[key].f;
-    h+='<div class="beast st'+b.stage+(b.type==='random'&&b.stage===0?' myst'+((b.taps||0)>=20?' crk2':(b.taps||0)>=10?' crk1':''):'')+(can2?' ready':'')+(b.sick?' sick':'')+(walk?' walk':'')+(fl?' flip':'')+'" data-beast="'+g+'" data-sz="'+sz+'" style="left:'+(x-sz/2)+'px;top:'+(y-sz)+'px;width:'+sz+'px;height:'+sz+'px;font-size:'+sz+'px;--bc:'+BEASTS[b.type].col+'" title="第'+g+'組守護獸：'+BEASTS[b.type].name+'（'+STAGE[b.stage]+'）"><span>'+beastIcon(b)+'</span>'+(b.sick?'<i class="bsick">🤒</i>':can2?'<i class="bup">⬆</i>':'')+quoteBubble(c,g,b)+(b.stage===4?'<i class="bgl">✨</i>':'')+(b.type==='random'&&b.stage===0?'<i class="tapn">👆 '+(TAP_N-(b.taps||0))+'</i>':'')+'</div>';}
+    h+='<div class="beast st'+b.stage+(b.type==='random'&&b.stage===0?' myst'+((b.taps||0)>=TAP_C2?' crk2':(b.taps||0)>=TAP_C1?' crk1':''):'')+(can2?' ready':'')+(b.sick?' sick':'')+(walk?' walk':'')+(fl?' flip':'')+'" data-beast="'+g+'" data-sz="'+sz+'" style="left:'+(x-sz/2)+'px;top:'+(y-sz)+'px;width:'+sz+'px;height:'+sz+'px;font-size:'+sz+'px;--bc:'+BEASTS[b.type].col+'" title="第'+g+'組守護獸：'+BEASTS[b.type].name+'（'+STAGE[b.stage]+'）"><span>'+beastIcon(b)+'</span>'+(b.sick?'<i class="bsick">🤒</i>':can2?'<i class="bup">⬆</i>':'')+quoteBubble(c,g,b)+(b.stage===4?'<i class="bgl">✨</i>':'')+(b.type==='random'&&b.stage===0?'<i class="tapn">👆 '+(TAP_N-(b.taps||0))+'</i>':'')+'</div>';}
   return h;
 }
 function stageDots(b){return '<div class="sdots">'+STAGE.map((n,i)=>'<span class="'+(i<=b.stage?'on':'')+'" title="'+n+'">'+(i<=b.stage?BEASTS[b.type].st[i]:'·')+'</span>').join('<i>›</i>')+'</div>';}
-const TAP_N=30;
+const TAP_N=20,TAP_C1=7,TAP_C2=14;
 function pickSurprise(c,g,b){const all=Object.keys(BEASTS).filter(k=>k!=='random'),prev=b.lastRb&&b.lastRb.from,others=Object.keys(c.guard||{}).filter(k=>+k!==g).map(k=>c.guard[k].type);let ks=all.filter(k=>k!==prev&&!others.includes(k));if(!ks.length)ks=all.filter(k=>k!==prev);if(!ks.length)ks=all;return ks[Math.floor(Math.random()*ks.length)];}
 function tapEgg(c,g,el){
   const b=guard(c,g);if(b.type!=='random'||b.stage!==0)return false;
   b.taps=(b.taps||0)+1;ensureAudio();tone(330+b.taps*22,0.07,'triangle',0.2);
   if(b.taps<TAP_N){save();
-    if(el){el.classList.remove('tapk');void el.offsetWidth;el.classList.add('tapk');el.classList.toggle('crk1',b.taps>=10);el.classList.toggle('crk2',b.taps>=20);
+    if(el){el.classList.remove('tapk');void el.offsetWidth;el.classList.add('tapk');el.classList.toggle('crk1',b.taps>=TAP_C1);el.classList.toggle('crk2',b.taps>=TAP_C2);
       const n=el.querySelector('.tapn');if(n)n.textContent='👆 '+(TAP_N-b.taps);
       const f=document.createElement('i');f.className='tapplus';f.textContent=b.taps;el.appendChild(f);setTimeout(()=>f.remove(),700);}
-    if(b.taps===10||b.taps===20)toast(b.taps===10?'🥚 蛋殼出現裂痕了！':'🥚 快破了！再 '+(TAP_N-b.taps)+' 下！');
+    if(b.taps===TAP_C1||b.taps===TAP_C2)toast(b.taps===TAP_C1?'🥚 蛋殼出現裂痕了！':'🥚 快破了！再 '+(TAP_N-b.taps)+' 下！');
     return true;}
   b.type=pickSurprise(c,g,b);b.taps=0;save();renderView();showHatchEgg(c,g);return true;
 }
@@ -1556,7 +1556,7 @@ function showReborn(c,g,from){
   const b=guard(c,g),F=BEASTS[from]||BEASTS[b.type],egg=BEASTS[b.type].st[0];ensureAudio();
   modal('<div class="rbs"><div class="rbsky"><span class="rbst s1">✨</span><span class="rbst s2">⭐</span><span class="rbst s3">✨</span><span class="rbst s4">🌟</span></div>'+
     '<div class="rbold">'+F.st[4]+'</div><div class="rbegg">'+egg+'</div></div>'+
-    '<h2 class="rbt1">'+esc(F.name)+'神獸飛回天上了 ✨</h2><div class="rbt2">謝謝第 '+g+' 組的照顧！<br>天上掉下來一顆<b>神秘蛋</b>！<br>組員輪流點座位圖上的神秘蛋 <b>30 下</b>，就會知道是哪一隻神獸的蛋！</div>'+
+    '<h2 class="rbt1">'+esc(F.name)+'神獸飛回天上了 ✨</h2><div class="rbt2">謝謝第 '+g+' 組的照顧！<br>天上掉下來一顆<b>神秘蛋</b>！<br>組員輪流點座位圖上的神秘蛋 <b>20 下</b>，就會知道是哪一隻神獸的蛋！</div>'+
     '<div class="acts rbacts"><button class="btn" data-act="again">🔁 再看一次</button><button class="btn pri" data-act="x" style="font-size:20px">好！</button></div>','rbm',{again:()=>showReborn(c,g,from)});
   [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'triangle',0.2),300+i*160));
   setTimeout(()=>{tone(392,0.15,'sine',0.25);setTimeout(()=>tone(523,0.3,'sine',0.25),150);},3300);
@@ -1616,7 +1616,7 @@ function guardAction(a,g,el){
   else if(a==='box'){closeModal();openBox(g);}
   else if(a==='heal'){closeModal();const b=guard(c,g);if((c.groupPts[g]||0)<healCost(c)){toast('⭐ 不夠');return;}c.groupPts[g]-=healCost(c);b.sick=false;b.lastStreak=0;b.cleanFails=0;delete b.sickWhy;save();renderView();ensureAudio();fanfare();
     modal('<div class="heal"><span>💊</span><span class="hb">'+beastIcon(b)+'</span></div><h2>第 '+g+' 組的'+BEASTS[b.type].name+'康復了！</h2><div style="font-size:20px">謝謝大家用星星照顧牠，之後要一起加油，別再最後一名囉 💪</div><div class="acts"><button class="btn pri" data-act="x">太好了！</button></div>','party',{});}
-  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆神秘蛋（點 30 下會變成某一隻神獸的蛋），重新開始培育。已培育神獸數 +1。','送回天上',()=>{const from=b.type;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();b.lastRb={from:from,t:Date.now()};b.type='random';delete b.speechIdx;save();renderView();showReborn(c,g,from);});}
+  else if(a==='reborn'){closeModal();const b=guard(c,g);confirmBox('送'+BEASTS[b.type].name+'回天上？','第 '+g+' 組會得到一顆神秘蛋（點 20 下會變成某一隻神獸的蛋），重新開始培育。已培育神獸數 +1。','送回天上',()=>{const from=b.type;c.beastLog=c.beastLog||[];c.beastLog.push({type:b.type,g:g,t:Date.now()});b.done=(b.done||0)+1;b.stage=0;b.boxes={};b.wall={};b.start=Date.now();b.lastRb={from:from,t:Date.now()};b.type='random';delete b.speechIdx;save();renderView();showReborn(c,g,from);});}
   else if(a==='rbshow'){closeModal();const b=guard(c,g);if(b.lastRb)showReborn(c,g,b.lastRb.from);}
 }
 $('#overlay').addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(!b)return;e.stopPropagation();guardAction(b.dataset.gd,+b.dataset.g,b);},true);
