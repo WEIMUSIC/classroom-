@@ -989,10 +989,14 @@ const fmt=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000);return String(Math.
 
 /* ---------- render ---------- */
 function renderAll(){renderTop();renderEnergy();renderView();}
+let lastView=null;
+function scrollToMap(now){if(document.body.classList.contains('present'))return;const b=$('#mapbox'),t=$('#topbar');if(!b||!b.offsetParent)return;const y=Math.max(0,b.getBoundingClientRect().top+window.scrollY-(t?t.offsetHeight:0)-8);if(Math.abs(y-window.scrollY)>1)window.scrollTo({top:y,behavior:now?'auto':'smooth'});}
 function renderView(){
   ['class','farm','shop','dex','records','setup','settings'].forEach(v=>$('#view-'+v).classList.toggle('hidden',v!==view));
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
   $('#energy').classList.toggle('hidden',view!=='class');
+  const enter=view==='class'&&lastView!=='class';lastView=view;
+  if(enter)setTimeout(scrollToMap,60);
   if(view==='class')renderClass();else if(view==='farm')renderFarm();else if(view==='shop')renderShop();else if(view==='dex')renderDex();else if(view==='records')renderRecords();else if(view==='setup')renderSetup();else renderSettings();
 }
 function renderTop(){
@@ -1141,11 +1145,14 @@ function renderClass(){
   h+='<div class="hint"><button class="btn'+(editMode?' pri':'')+'" id="btnEdit">'+(editMode?'✔ 完成調整':'✏️ 調整座位')+'</button><button class="btn" id="btnLog">📜 本節紀錄</button><button class="btn'+(TV()?' tvon':'')+'" id="btnTV" title="切換畫面方向">'+(TV()?'🧑‍🏫 老師視角（黑板在下）':'👀 學生視角（黑板在上）')+'</button><button class="btn" id="btnPrint">🖨️ 列印座位表</button><span>👆 點座位＝記一次</span><span>⌨️ 輸入座號＋Enter</span><span>↶ Ctrl+Z 復原</span>'+
      '<span class="legend"><span class="lg" style="border:3px solid #f59e0b"></span>提醒<span class="lg" style="border:3px solid #f97316;background:#fdba74"></span>注意<span class="lg" style="border:3px solid #dc2626;background:#fca5a5"></span>最後警告（閃爍）<span class="lg" style="background:#4c1d95"></span>超過</span></div>'+
      '<div class="hint" style="margin-top:6px"><span>每 '+S.settings.recoverMin+' 分鐘沒被記自動回復一格；每 '+S.settings.interval+' 分鐘結算一次：整組沒被記的組本節 +1 分；下課依名次發 ⭐（'+rankAward().join('/')+'）；🍎 每節課樹上有 '+lessonApples()+' 顆蘋果，秩序不好就點樹讓蘋果掉一顆'+(S.settings.dropFruit?'（有人超過 '+S.settings.limit+' 次也會自動掉 1 顆）':'')+'，下課時剩下的蘋果放進果園'+'</span></div>';
-  m.innerHTML=h;updateToday();twRender();fitMap();
+  const sy=window.scrollY,mb0=$('#mapbox'),tb0=$('#topbar'),dock=mb0&&mb0.offsetParent&&Math.abs(mb0.getBoundingClientRect().top-((tb0?tb0.offsetHeight:0)+8))<40;
+  m.style.minHeight=m.offsetHeight+'px';m.innerHTML=h;updateToday();twRender();fitMap();m.style.minHeight='';
+  if(dock)scrollToMap(true);else if(window.scrollY!==sy)window.scrollTo(0,sy);
 }
 function fitMap(){
   const box=$('#mapbox'),map=$('#map');if(!box||!map||!box.offsetParent)return;
-  const w=box.clientWidth,availH=window.innerHeight-box.getBoundingClientRect().top-(document.body.classList.contains('present')?8:70);
+  const pres=document.body.classList.contains('present'),tb=$('#topbar'),tbH=tb&&!pres?tb.offsetHeight:0;
+  const w=box.clientWidth,availH=pres?window.innerHeight-box.getBoundingClientRect().top-8:window.innerHeight-tbH-14;
   const X0=150,MW=1650;
   const k=Math.min(w/MW,Math.max(availH,320)/1080);
   map.style.transform=TV()?'scale('+k+') translate(1920px,1080px) rotate(180deg)':'scale('+k+')';map.style.left=((w-MW*k)/2-X0*k)+'px';box.style.height=(1080*k)+'px';
