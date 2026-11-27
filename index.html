@@ -518,6 +518,17 @@ body.present .cv{display:block}
 .wgface .bxr{background:var(--rc);color:#fff;font-weight:900;border-radius:10px;padding:0 8px;font-size:12px}
 .wsum{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:6px;font-size:17px}
 .wsum span{background:#fff;border:3px solid var(--rc);color:var(--rc);border-radius:14px;padding:1px 10px}.wg.ssr{box-shadow:0 0 0 6px #fde047,0 0 30px #f59e0b}
+.gath{display:flex;align-items:center;gap:18px;padding:16px 22px}
+.gbeast{width:130px;height:130px;font-size:110px;line-height:1;flex:none;filter:drop-shadow(0 0 16px #fde047)}
+.gbeast img{width:100%;height:100%;object-fit:contain}
+.gq{font-size:30px;font-weight:900;color:#1f2a44}
+.gmem{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:6px 22px}
+.gm{border:4px solid #e2e8f0;background:#fff;border-radius:18px;padding:12px 22px;font-size:24px;font-weight:900;font-family:inherit;color:#1f2a44;cursor:pointer;display:flex;flex-direction:column;align-items:center}
+.gm.on{background:#dcfce7;border-color:#16a34a;color:#166534;animation:pop .35s}
+.gm.away{opacity:.5;cursor:default;border-style:dashed}
+.gm small{font-size:13px;color:#64748b}
+.gcount{text-align:center;font-size:22px;font-weight:800;margin:10px 0 0}
+.gcount b{color:#16a34a;font-size:28px}
 .bxrule{margin-top:4px;font-size:15px;color:#92400e;background:#fef3c7;border-radius:8px;padding:3px 8px;display:inline-block}
 .speech{display:flex;align-items:center;gap:20px;padding:24px 28px}
 .spbeast{font-size:150px;line-height:1;flex:none;filter:drop-shadow(0 0 22px #fde047);animation:pethop 1.2s ease-in-out infinite alternate}
@@ -1678,8 +1689,19 @@ function beastSpeech(c,g){
   const t=custom||DEF_SPEECH[b.speechIdx%DEF_SPEECH.length];
   return t.replace(/\{組\}/g,g).replace(/\{名單\}/g,mem).replace(/\{守護獸\}/g,BEASTS[b.type].name);
 }
-function openBox(g){const c=cur();if(!c)return;const b=guard(c,g);if(b.stage<4){toast('還沒變成神獸喔');return;}if(b.sick){toast('神獸生病了，先治好才能開盲盒');return;}boxG=g;boxSel=null;wallCol=null;boxAnim=false;;boxMode=Object.keys(b.boxes||{}).length?'grid':'speech';$('#box').classList.remove('hidden');renderBox(true);}
+function openBox(g){const c=cur();if(!c)return;const b=guard(c,g);if(b.stage<4){toast('還沒變成神獸喔');return;}if(b.sick){toast('神獸生病了，先治好才能開盲盒');return;}boxG=g;boxSel=null;wallCol=null;boxAnim=false;;boxMode=Object.keys(b.boxes||{}).length?'grid':'gather';boxHere={};$('#box').classList.remove('hidden');renderBox(true);}
 function closeBox(){clearInterval(twT);if(boxSpin){clearInterval(boxSpin);boxSpin=null;}$('#box').classList.add('hidden');renderView();}
+let boxHere={};
+function renderGather(first){
+  const c=cur(),g=boxG,b=guard(c,g),B=BEASTS[b.type],mem=c.students.filter(s=>s.group===g).sort((x,y)=>x.no-y.no),ab=absentSet(c);
+  const need=mem.filter(s=>!ab.has(s.no)),here=need.filter(s=>boxHere[s.no]).length,all=here>=need.length;
+  let h='<div class="dcard'+(first?'':' noanim')+'"><div class="dhead" style="background:linear-gradient(90deg,'+B.col+',#f59e0b)"><b>📣 第 '+g+' 組的'+B.name+'神獸要道別了</b><button class="dx" data-bxa="close">✕</button></div>'+
+    '<div class="gath"><div class="gbeast">'+beastIcon(b)+'</div><div><div class="gq">第 '+g+' 組的同學，<b>全部都到齊了嗎？</b></div><div class="small">到了的同學，請點自己的名字 ✋</div></div></div>'+
+    '<div class="gmem">'+mem.map(s=>ab.has(s.no)?'<span class="gm away">'+s.no+' '+esc(s.name)+'<small>今天不在</small></span>':'<button class="gm'+(boxHere[s.no]?' on':'')+'" data-bxa="here" data-no="'+s.no+'">'+(boxHere[s.no]?'✅ ':'✋ ')+s.no+' '+esc(s.name)+'</button>').join('')+'</div>'+
+    '<div class="gcount">已到 <b>'+here+'</b> / '+need.length+' 人'+(mem.length>need.length?'<span class="small">（今天不在的同學，回來後可以再選禮物）</span>':'')+'</div>'+
+    '<div class="drow center">'+(all?'<button class="dgo" data-bxa="gatherOk">✅ 全部到齊了，開始道別！</button>':'<button class="btn" data-bxa="allHere">全部都到了</button><button class="btn" data-bxa="gatherOk">還有 '+(need.length-here)+' 人沒到，先開始</button>')+'</div></div>';
+  $('#box').innerHTML=h;
+}
 function renderSpeech(first){
   const c=cur(),g=boxG,b=guard(c,g),B=BEASTS[b.type],txt=beastSpeech(c,g);
   $('#box').innerHTML='<div class="dcard'+(first?'':' noanim')+'"><div class="dhead" style="background:linear-gradient(90deg,'+B.col+',#f59e0b)"><b>🌟 第 '+g+' 組的'+B.name+'神獸有話要說</b><button class="dx" data-bxa="close">✕</button></div>'+
@@ -1721,6 +1743,7 @@ function wallShow(){
 function giftHTML(i){i=wallColOf(i);const k=GIFT_COL[(i*7)%GIFT_COL.length],rot=((i*37)%9)-4,sc=0.9+((i*13)%5)*0.04;
   return '<span class="gft" style="--gb:'+k[0]+';--gr:'+k[1]+';transform:rotate('+rot+'deg) scale('+sc+')"><span class="gbow">🎀</span><span class="glid"></span><span class="gbody"></span></span>';}
 function renderBox(first){
+  if(boxMode==='gather'){renderGather(first);return;}
   if(boxMode==='speech'){renderSpeech(first);return;}
   const c=cur(),g=boxG,b=guard(c,g),B=BEASTS[b.type],mem=c.students.filter(s=>s.group===g).sort((x,y)=>x.no-y.no),ab=absentSet(c);
   b.wall=b.wall||{};const op=Object.keys(b.boxes).length,N=Math.max(WALL_N,mem.length),hasElig=boxPrizes().some(x=>x.elig);
@@ -1751,6 +1774,9 @@ $('#box').addEventListener('click',e=>{
   else if(a==='toBox'){clearInterval(twT);boxMode='grid';renderBox(false);const gd=guard(c,boxG);if(!Object.keys(gd.boxes||{}).length)setTimeout(wallShow,500);}
   else if(a==='show'){if(boxSpin)return;boxSel=null;renderBox(false);setTimeout(wallShow,50);}
   else if(a==='again'){boxMode='speech';renderBox(false);}
+  else if(a==='here'){const n=+b.dataset.no;boxHere[n]=!boxHere[n];ensureAudio();if(boxHere[n])tone(660+Object.keys(boxHere).length*60,0.12,'sine',0.2);renderBox(false);}
+  else if(a==='allHere'){const ab=absentSet(c);c.students.filter(s=>s.group===boxG&&!ab.has(s.no)).forEach(s=>boxHere[s.no]=true);ensureAudio();tone(880,0.15,'sine',0.2);renderBox(false);}
+  else if(a==='gatherOk'){boxMode='speech';renderBox(false);}
   else if(a==='pick'){if(boxSpin||boxAnim)return;boxSel=+b.dataset.no;ensureAudio();tone(784,0.12,'sine',0.2);renderBox(false);}
   else if(a==='rand'){if(boxSpin||boxAnim)return;const gd=guard(c,boxG),ab=absentSet(c),mem=c.students.filter(s=>s.group===boxG&&!gd.boxes[s.no]);let pool=mem.filter(s=>!ab.has(s.no));if(!pool.length)pool=mem;if(!pool.length)return;
     ensureAudio();const fin=pool[Math.floor(Math.random()*pool.length)].no;let n=0;const steps=14+Math.floor(Math.random()*4);
