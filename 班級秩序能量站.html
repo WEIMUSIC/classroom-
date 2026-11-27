@@ -12,6 +12,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
+html{touch-action:pan-x pan-y}
 body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC",system-ui,sans-serif;font-size:16px}
 button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit;font-size:15px}
@@ -2910,6 +2911,10 @@ setInterval(()=>{
 
 renderAll();
 })();
+
+/* 防止觸控板或觸控螢幕不小心「兩指縮放」讓畫面跑掉（鍵盤 Ctrl +/− 仍可調整） */
+window.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
+['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
 </script>
 </body>
 </html>
